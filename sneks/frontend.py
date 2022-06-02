@@ -4,7 +4,9 @@ import importlib.metadata
 import sys
 
 import coiled
+from coiled.utils import parse_wait_for_workers
 from distributed.client import Client
+from distributed.worker import get_client as get_default_client
 
 from sneks.plugin import PoetryDepManager
 
@@ -20,8 +22,10 @@ def _current_package_versions(*packages: str) -> dict[str, str]:
 def _environ() -> dict[str, str]:
     return {
         "PIP_PACKAGES": " ".join(
-            f"{p}={v}"
-            for p, v in _current_package_versions("dask", "distributed").items()
+            f"{p}=={v}"
+            for p, v in _current_package_versions(
+                "dask", "distributed", "bokeh"
+            ).items()
         )
     }
 
@@ -41,14 +45,32 @@ def _poetry_files() -> tuple[bytes, bytes]:
 
 
 def get_client(**kwargs) -> Client:
+    "Launch a dask cluster in the cloud compatible with your current Poetry environment"
     # TODO deal with async
     # TODO paramspec for signature
 
+    wait_for_workers = kwargs.pop("wait_for_workers", None)
     environ: dict[str, str] = kwargs.pop("environ", {})
     environ.update(_environ())
     cluster = coiled.Cluster(
         software=_senv(), environ=environ, **kwargs, wait_for_workers=False
     )
     client = Client(cluster)
+    print("Uploading & installing dependencies on running workers")  # TODO improve
     client.register_worker_plugin(PoetryDepManager(*_poetry_files()))
+    target = parse_wait_for_workers(cluster._start_n_workers, wait_for_workers)
+    print(f"Waiting for {target} worker(s)")  # TODO improve
+    client.wait_for_workers(target)
     return client
+
+
+# Utils for testing. Remove.
+def can_import(module: str):
+    import importlib
+
+    importlib.import_module(module)
+    return True
+
+
+def check_import(module: str):
+    get_default_client().submit(can_import, module, pure=False).result()
