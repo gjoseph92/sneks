@@ -29,7 +29,7 @@ repos:
         name: pyright
         entry: pyright
         language: node
-        pass_filenames: false
+        pass_filenames: true
         types: [python]
         # Replace the version below with the latest pyright version
         additional_dependencies: ["pyright@1.1.251"]

@@ -18,7 +18,7 @@ pytest_plugins = ["docker_compose"]
 class TestPickle:
     @mock.patch.object(cloudpickle, "dumps", wraps=cloudpickle.dumps)
     def test_pickle_by_value(self, mock_cp_dumps: mock.Mock):
-        obj = PoetryDepManager(b"hello world")
+        obj = PoetryDepManager(b"hello", b"world")
         pickled = dumps(obj)
         mock_cp_dumps.assert_called_once()
         assert not hasattr(obj, "_the_first_pickle_is_the_deepest")
@@ -74,15 +74,13 @@ def test_plugin(function_scoped_container_getter):
         with pytest.raises(ImportError):
             print(client.submit(can_import, "black").result())
 
-        # Lockfile was generated from:
-        # mkdir test
-        # cd test
-        # poetry init -n
-        # poetry add black
-        with open(Path(__file__).parent / "poetry.lock.fixture", "rb") as f:
+        fixtures = Path(__file__).parent / "fixture"
+        with open(fixtures / "pyproject.toml", "rb") as f:
+            pyproject = f.read()
+        with open(fixtures / "poetry.lock", "rb") as f:
             lockfile = f.read()
 
-        plugin = PoetryDepManager(lockfile)
+        plugin = PoetryDepManager(pyproject, lockfile)
         try:
             client.register_worker_plugin(plugin)
         except subprocess.CalledProcessError as e:
@@ -90,4 +88,4 @@ def test_plugin(function_scoped_container_getter):
             print("[stderr]", e.stderr.decode())
             raise
 
-        assert client.submit(can_import, "black").result() is True
+        assert client.submit(can_import, "black", pure=False).result() is True

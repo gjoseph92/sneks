@@ -27,26 +27,33 @@ class PoetryDepManager(NannyPlugin):
     _compressed_lockfile: bytes
     restart: bool = True  # TODO set this in `setup`
 
-    def __init__(self, lockfile: bytes) -> None:
+    def __init__(self, pyproject: bytes, lockfile: bytes) -> None:
+        self._compressed_pyproject = gzip.compress(pyproject)
         self._compressed_lockfile = gzip.compress(lockfile)
 
     async def setup(self, nanny: Nanny) -> None:
-        lockfile = await asyncio.to_thread(gzip.decompress, self._compressed_lockfile)
-        lockfile_path = Path(nanny.local_dir) / "poetry.lock"
+        workdir = Path(nanny.local_directory)
+        pyproject_path = workdir / "pyproject.toml"
+        lockfile_path = workdir / "poetry.lock"
+        await asyncio.gather(
+            write_compressed_file(self._compressed_pyproject, pyproject_path),
+            write_compressed_file(self._compressed_lockfile, lockfile_path),
+        )
 
         # TODO skip installation and don't restart if there's already a lockfile and it's up to date.
 
-        with open(lockfile_path, "wb") as f:
-            f.write(lockfile)
-        del lockfile
-        logger.info(f"Wrote lockfile to {lockfile_path}")
-
         poetry_path = await get_poetry()
-        logger.info(f"Poetry available at {poetry_path}")
+        print(f"Poetry available at {poetry_path}")
 
-        logger.info("Installing dependencies from lockfile...")
-        await install(poetry_path, lockfile_path)
-        logger.info("Installation complete! Restarting worker.")
+        # Make poetry use the global environment
+        # TODO do this without a subprocess
+        # TODO only do this once
+        await run(poetry_path, "config", "virtualenvs.create", "false")
+        print("Poetry configured to use global environment")
+
+        print("Installing dependencies from lockfile...")
+        await install(poetry_path, workdir)
+        print("Installation complete! Restarting worker.")
 
     def __getstate__(self) -> dict:
         """
@@ -71,39 +78,59 @@ class PoetryDepManager(NannyPlugin):
             return self.__dict__
 
 
-async def get_poetry() -> str:
-    if not (poetry_path := shutil.which("poetry")):
-        logger.info("Installing Poetry...")
-        await run(
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            "poetry",
-        )
-        poetry_path = shutil.which("poetry")
-        assert poetry_path, "Poetry not found after installation!"
+async def write_compressed_file(data: bytes, path: Path) -> None:
+    def _write():
+        with open(path, "wb") as f:
+            f.write(gzip.decompress(data))
 
-        # Make poetry use the global environment
-        # TODO do this without a subprocess
-        await run(poetry_path, "config", "virtualenvs.create", "false")
+    await asyncio.to_thread(_write)
+    print(f"Wrote to {path}")
+
+
+async def get_poetry() -> str:
+    poetry_path = Path.home() / ".local" / "bin" / "poetry"
+    if poetry_path.is_file():
+        return str(poetry_path)
+
+    elif not (poetry_path := shutil.which("poetry")):
+        raise RuntimeError("cannot find poetry installation")
+        # We don't want to install poetry in the main environment,
+        # because then it might try to remove itself if it's not a dep
+        # of the user's environment (it almost certainly isn't).
+
+        # print("Installing Poetry...")
+        # await run(
+        #     sys.executable,
+        #     "-m",
+        #     "pip",
+        #     "install",
+        #     "poetry",
+        # )
+        # poetry_path = shutil.which("poetry")
+        # assert poetry_path, "Poetry not found after installation!"
+
     return poetry_path
 
 
-async def install(poetry_path: str, lockfile_path: Path) -> None:
+async def install(poetry_path: str, workdir: Path) -> None:
     cwd = Path.cwd()
     try:
-        os.chdir(lockfile_path.parent)
+        os.chdir(workdir)
         await run(
-            poetry_path, "install", "--remove-untracked", "--no-dev", "--no-root", "-n"
+            poetry_path,
+            "install",
+            "--remove-untracked",
+            "--no-dev",
+            "--no-root",
+            "-n",
         )
     finally:
         os.chdir(cwd)
 
 
-async def run(program: str, *args: str, tee: bool = True) -> None:
+async def run(program: str | Path, *args: str, tee: bool = True) -> None:
     call = f"{program} {' '.join(args)}"
-    logger.debug(f"Executing {call}")
+    print(f"Executing {call}")
     proc = await asyncio.create_subprocess_exec(
         program, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
@@ -112,7 +139,7 @@ async def run(program: str, *args: str, tee: bool = True) -> None:
     returncode = proc.returncode
     assert returncode is not None
 
-    logger.debug(f"{call} exited with {returncode}")
+    print(f"{call} exited with {returncode}")
     if tee:
         if stdout:
             sys.stdout.write(stdout.decode())
