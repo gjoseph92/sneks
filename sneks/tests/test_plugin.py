@@ -83,6 +83,11 @@ def test_plugin(function_scoped_container_getter):
             lockfile = f.read()
 
         plugin = PoetryDepManager(lockfile)
-        client.register_worker_plugin(plugin)
+        try:
+            client.register_worker_plugin(plugin)
+        except subprocess.CalledProcessError as e:
+            print("[stdout]", e.stdout.decode())
+            print("[stderr]", e.stderr.decode())
+            raise
 
         assert client.submit(can_import, "black").result() is True
