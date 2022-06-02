@@ -62,7 +62,7 @@ def tar_docker_context() -> Iterator[Path]:
     tarpath = here / "context.tar"
     with tarfile.open(tarpath, mode="w:gz") as tar:
         tar.add(here / "Dockerfile", "Dockerfile")
-        tar.add(here / "fake-dask.sh", "fake-dask.sh")
+        tar.add(here / "fake-entrypoint.sh", "fake-entrypoint.sh")
 
     try:
         yield tarpath
