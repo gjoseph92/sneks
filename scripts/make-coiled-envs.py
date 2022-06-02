@@ -13,7 +13,6 @@ from __future__ import annotations
 import asyncio
 import io
 import sys
-from typing import Literal
 
 from coiled.core import Async, Cloud
 from rich import print
@@ -51,16 +50,16 @@ PY_VERSIONS = [
 async def make_env(
     cloud: Cloud[Async],
     py_version: str,
-    docker: Literal["slim"] | Literal["alpine"] | Literal[False] = False,
+    docker: bool = False,
 ) -> str:
     name = f"sneks-{py_version.replace('.', '-')}"
     if docker:
-        name += "-" + docker
+        name += "-slim"  # would love to use alpine, it's way smaller, but many wheels don't work
     print(f"Building senv {name}")
     log = io.StringIO()
     try:
         if docker:
-            kwargs = {"container": f"python:{py_version}-{docker}"}
+            kwargs = {"container": f"python:{py_version}-slim"}
         else:
             kwargs = {
                 "conda": {
@@ -87,7 +86,7 @@ async def make_envs(
     cloud: Cloud[Async],
     versions: list[str],
     *,
-    docker: Literal["slim"] | Literal["alpine"] | Literal[False] = False,
+    docker: bool = False,
     concurrency: int = 6,
 ) -> list[str]:
     sem = asyncio.Semaphore(concurrency)
@@ -102,11 +101,8 @@ async def make_envs(
 
 async def main():
     if len(sys.argv) == 2:
-        docker = sys.argv[-1]
-        assert docker in (
-            "slim",
-            "alpine",
-        ), "To use docker base, pass `slim` or `alpine`"
+        assert sys.argv[-1] == "--docker", "To use docker base, pass `--docker`"
+        docker = True
     else:
         docker = False
     async with Cloud(asynchronous=True) as cloud:
