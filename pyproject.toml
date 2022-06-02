@@ -8,11 +8,13 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.9"
 coiled = "^0.2.3"
+cloudpickle = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
 flake8 = "^4.0.1"
 ipython = "^8.4.0"
+pytest = "^7.1.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
