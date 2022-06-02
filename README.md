@@ -31,8 +31,8 @@ from sneks import get_client
 import dask.dataframe as dd
 
 client = get_client(name="on-a-plane")
-ddf = dd.read_csv(
-    "s3://nyc-tlc/csv_backup/yellow_tripdata_2012-*.csv",
+ddf = dd.read_parquet(
+    "s3://nyc-tlc/trip data/yellow_tripdata_2012-*.parquet",
 )
 print(ddf.groupby('passenger_count').trip_distance.mean().compute())
 ```
