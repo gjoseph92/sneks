@@ -8,6 +8,7 @@ import tomli
 from coiled.utils import parse_wait_for_workers
 from distributed.client import Client
 from distributed.worker import get_client as get_default_client
+from rich import print
 
 from sneks.plugin import PoetryDepManager
 
@@ -108,17 +109,17 @@ def get_client(**kwargs) -> Client:
     )
     client = Client(cluster)
     print(
-        "Uploading lockfile & installing dependencies on running workers"
+        "[bold white]Uploading lockfile and installing dependencies on running workers[/]"
     )  # TODO improve
     try:
         client.register_worker_plugin(PoetryDepManager(pyproject, lockfile))
     except subprocess.CalledProcessError as e:
-        print("Dependency installation failed")  # TODO improve
+        print("[bold red]Dependency installation failed[/]")  # TODO improve
         print("[stdout]", e.stdout.decode())
         print("[stderr]", e.stderr.decode())
         raise
     target = parse_wait_for_workers(cluster._start_n_workers, wait_for_workers)
-    print(f"Waiting for {target} worker(s)")  # TODO improve
+    print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
     client.wait_for_workers(target)
     return client
 
