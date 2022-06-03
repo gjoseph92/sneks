@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 
 import coiled
@@ -98,7 +99,13 @@ def get_client(**kwargs) -> Client:
     )
     client = Client(cluster)
     print("Uploading & installing dependencies on running workers")  # TODO improve
-    client.register_worker_plugin(PoetryDepManager(pyproject, lockfile))
+    try:
+        client.register_worker_plugin(PoetryDepManager(pyproject, lockfile))
+    except subprocess.CalledProcessError as e:
+        print("Dependency installation failed")  # TODO improve
+        print("[stdout]", e.stdout.decode())
+        print("[stderr]", e.stderr.decode())
+        raise
     target = parse_wait_for_workers(cluster._start_n_workers, wait_for_workers)
     print(f"Waiting for {target} worker(s)")  # TODO improve
     client.wait_for_workers(target)
