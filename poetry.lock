@@ -1588,7 +1588,7 @@ test = ["pytest", "pytest-cov", "pytest-flake8", "pytest-isort", "coverage"]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -1712,7 +1712,7 @@ heapdict = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "4daa41a41d4fd36424958e2e764a28259e18cb8f259400fb36fcb69afb35a3eb"
+content-hash = "3145a4f47f644f00808e6e6e4248286fed2e6fa875aefeea5c86c372d03d3ba3"
 
 [metadata.files]
 aiobotocore = [
