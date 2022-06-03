@@ -107,7 +107,9 @@ def get_client(**kwargs) -> Client:
         software=_senv(), environ=environ, **kwargs, wait_for_workers=False
     )
     client = Client(cluster)
-    print("Uploading & installing dependencies on running workers")  # TODO improve
+    print(
+        "Uploading lockfile & installing dependencies on running workers"
+    )  # TODO improve
     try:
         client.register_worker_plugin(PoetryDepManager(pyproject, lockfile))
     except subprocess.CalledProcessError as e:
