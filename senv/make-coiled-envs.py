@@ -1,8 +1,9 @@
 """
 Build lots of Docker images and Coiled software environments for every version of Python.
 
-These are lightweight---they're just the official `slim` Python docker images with Poetry installed
-and a tiny script added. When the image launches, it installs more pip packages (dask, distributed, bokeh)
+These are sadly heavy---they're the full Python docker images, so we have things you'd expect
+like git and a builtin CA bundle. We then install Poetry and a tiny script. When the image
+launches, it installs more pip packages (dask, distributed, bokeh)
 via an environment variable, then runs the dask command requested.
 
 This script builds the images locally,

@@ -1,5 +1,5 @@
 ARG PY_VERSION
-FROM python:$PY_VERSION-slim
+FROM python:$PY_VERSION
 
 RUN python3 -c "from urllib.request import urlopen; exec(urlopen('https://install.python-poetry.org').read())"
 
