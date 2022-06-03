@@ -6,8 +6,8 @@ from sneks.frontend import _current_package_versions
 
 
 def test_current_package_versions():
-    fixtures = Path(__file__).parent / "fixture"
-    with open(fixtures / "poetry.lock", "rb") as f:
+    env = Path(__file__).parent / "env-for-parsing"
+    with open(env / "poetry.lock", "rb") as f:
         lockfile = f.read()
 
     assert _current_package_versions(

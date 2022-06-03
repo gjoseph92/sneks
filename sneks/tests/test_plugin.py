@@ -75,10 +75,10 @@ def test_plugin(function_scoped_container_getter):
         with pytest.raises(ImportError):
             print(client.submit(can_import, "black").result())
 
-        fixtures = Path(__file__).parent / "fixture"
-        with open(fixtures / "pyproject.toml", "rb") as f:
+        env = Path(__file__).parent / "env-for-running"
+        with open(env / "pyproject.toml", "rb") as f:
             pyproject = f.read()
-        with open(fixtures / "poetry.lock", "rb") as f:
+        with open(env / "poetry.lock", "rb") as f:
             lockfile = f.read()
 
         plugin = PoetryDepManager(pyproject, lockfile)
