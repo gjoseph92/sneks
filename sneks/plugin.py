@@ -130,7 +130,7 @@ async def install(poetry_path: str, workdir: Path) -> bool:
         )
         # HACK we can do better than this text parsing to decide
         # whether to restart or not
-        return b"No dependencies to install or update" not in out
+        return b"Updating" in out or b"Removing" in out
     finally:
         os.chdir(cwd)
 
