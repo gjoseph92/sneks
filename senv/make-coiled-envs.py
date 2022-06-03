@@ -101,6 +101,9 @@ async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
             if stderr:
                 print(stderr.decode())
             raise RuntimeError("Image push failed")
+        print(f"Deleting image {name}")
+        await docker.images.delete(name)
+        print(f"Image {name} deleted")
     except Exception as exc:
         print(f"[bold red]Error with image {name}: {exc}")
         traceback.print_exc()
