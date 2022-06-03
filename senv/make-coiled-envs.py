@@ -48,7 +48,7 @@ PY_VERSIONS = [
     "3.8.10",
     "3.8.8",
     "3.8.6",
-    "3.8.5",  # NOTE: this one is special
+    "3.8.5",
     "3.8.4",
     "3.8.3",
     "3.8.2",
@@ -77,12 +77,7 @@ def tar_docker_context() -> Iterator[Path]:
 
 async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
     name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}-full"
-    base_image = (
-        f"python:{py_version}"
-        if py_version != "3.8.5"
-        else "coiled/default:sha-6b4e896"
-        # ^ This image is pre-baked into the AMIs, but only has py3.8.5 on it.
-    )
+    base_image = f"python:{py_version}"
     print(f"Building image {name} from {base_image}")
     try:
         with tarpath.open("rb") as f:
