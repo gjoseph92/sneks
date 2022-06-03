@@ -1,4 +1,5 @@
 import importlib
+import os
 import subprocess
 import sys
 import time
@@ -89,3 +90,13 @@ def test_plugin(function_scoped_container_getter):
             raise
 
         assert client.submit(can_import, "black", pure=False).result() is True
+
+        pids = client.run(os.getpid)
+        # Registering with same deps doesn't cause restart
+        try:
+            client.register_worker_plugin(plugin)
+        except subprocess.CalledProcessError as e:
+            print("[stdout]", e.stdout.decode())
+            print("[stderr]", e.stderr.decode())
+            raise
+        assert client.run(os.getpid) == pids

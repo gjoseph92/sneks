@@ -25,7 +25,6 @@ class PoetryDepManager(NannyPlugin):
     # ^ There should only ever be one instance of this plugin on a cluster at once.
     # So we always use the same name.
     _compressed_lockfile: bytes
-    restart: bool = True  # TODO set this in `setup`
 
     def __init__(self, pyproject: bytes, lockfile: bytes) -> None:
         self._compressed_pyproject = gzip.compress(pyproject)
@@ -52,8 +51,12 @@ class PoetryDepManager(NannyPlugin):
         print("Poetry configured to use global environment")
 
         print("Installing dependencies from lockfile...")
-        await install(poetry_path, workdir)
-        print("Installation complete! Restarting worker.")
+        self.restart = await install(poetry_path, workdir)
+        print(
+            "Installation complete! Restarting worker."
+            if self.restart
+            else "No dependencies to install or update"
+        )
 
     def __getstate__(self) -> dict:
         """
@@ -112,11 +115,11 @@ async def get_poetry() -> str:
     return poetry_path
 
 
-async def install(poetry_path: str, workdir: Path) -> None:
+async def install(poetry_path: str, workdir: Path) -> bool:
     cwd = Path.cwd()
     try:
         os.chdir(workdir)
-        await run(
+        out, err = await run(
             poetry_path,
             "install",
             "--remove-untracked",
@@ -124,11 +127,14 @@ async def install(poetry_path: str, workdir: Path) -> None:
             "--no-root",
             "-n",
         )
+        # HACK we can do better than this text parsing to decide
+        # whether to restart or not
+        return b"No dependencies to install or update" not in out
     finally:
         os.chdir(cwd)
 
 
-async def run(program: str | Path, *args: str, tee: bool = True) -> None:
+async def run(program: str | Path, *args: str, tee: bool = True) -> tuple[bytes, bytes]:
     call = f"{program} {' '.join(args)}"
     print(f"Executing {call}")
     proc = await asyncio.create_subprocess_exec(
@@ -148,3 +154,4 @@ async def run(program: str | Path, *args: str, tee: bool = True) -> None:
 
     if returncode != 0:
         raise CalledProcessError(returncode, call, stdout, stderr)
+    return stdout, stderr
