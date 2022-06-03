@@ -10,6 +10,7 @@ python = "^3.9"
 coiled = "^0.2.3"
 cloudpickle = "^2.1.0"
 tomli = "^2.0.1"
+rich = "^12.4.4"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
