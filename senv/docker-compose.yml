@@ -4,7 +4,8 @@ services:
     build:
       context: .
       args:
-        PY_VERSION: 3.9.1
+        IMAGE: python:3.9.1
+        # IMAGE: coiled/default:sha-6b4e896
     environment:
       - PIP_PACKAGES=poetry dask distributed
     command: |
@@ -17,7 +18,8 @@ services:
     build:
       context: .
       args:
-        PY_VERSION: 3.9.1
+        IMAGE: python:3.9.1
+        # IMAGE: coiled/default:sha-6b4e896
     environment:
       - PIP_PACKAGES=poetry dask distributed
     command: dask-worker tcp://scheduler:8786
@@ -28,7 +30,8 @@ services:
     build:
       context: .
       args:
-        PY_VERSION: 3.9.1
+        IMAGE: python:3.9.1
+        # IMAGE: coiled/default:sha-6b4e896
     environment:
       - PIP_PACKAGES=poetry dask distributed
     command: dask-worker tcp://scheduler:8786

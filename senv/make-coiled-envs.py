@@ -28,32 +28,32 @@ from coiled.core import Async, Cloud
 from rich import print
 
 PY_VERSIONS = [
-    "3.10.4",
-    "3.10.2",
-    "3.10.1",
-    "3.10.0",
-    "3.9.13",
-    "3.9.12",
-    "3.9.10",
-    "3.9.9",
-    "3.9.7",
-    "3.9.6",
-    "3.9.5",
-    "3.9.4",
-    "3.9.2",
+    # "3.10.4",
+    # "3.10.2",
+    # "3.10.1",
+    # "3.10.0",
+    # "3.9.13",
+    # "3.9.12",
+    # "3.9.10",
+    # "3.9.9",
+    # "3.9.7",
+    # "3.9.6",
+    # "3.9.5",
+    # "3.9.4",
+    # "3.9.2",
     "3.9.1",
-    "3.9.0",
-    "3.8.13",
-    "3.8.12",
-    "3.8.10",
-    "3.8.8",
-    "3.8.6",
+    # "3.9.0",
+    # "3.8.13",
+    # "3.8.12",
+    # "3.8.10",
+    # "3.8.8",
+    # "3.8.6",
     "3.8.5",
-    "3.8.4",
-    "3.8.3",
-    "3.8.2",
-    "3.8.1",
-    "3.8.0",
+    # "3.8.4",
+    # "3.8.3",
+    # "3.8.2",
+    # "3.8.1",
+    # "3.8.0",
 ]
 
 DOCKER_USERNAME = "jabriel"
@@ -77,13 +77,19 @@ def tar_docker_context() -> Iterator[Path]:
 
 async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
     name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}-full"
-    print(f"Building image {name}")
+    base_image = (
+        f"python:{py_version}"
+        if py_version != "3.8.5"
+        else "coiled/default:sha-6b4e896"
+        # ^ This image is pre-baked into the AMIs, but only has py3.8.5 on it.
+    )
+    print(f"Building image {name} from {base_image}")
     try:
         with tarpath.open("rb") as f:
             await docker.images.build(
                 fileobj=f,
                 encoding="gzip",
-                buildargs={"PY_VERSION": py_version},
+                buildargs={"IMAGE": base_image},
                 tag=name,
                 quiet=True,
             )
