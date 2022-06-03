@@ -72,7 +72,7 @@ def _environ(lockfile: bytes) -> dict[str, str]:
 
 def _senv() -> str:
     vi = sys.version_info
-    return f"{PROJECT_NAME}-{vi.major}-{vi.minor}-{vi.micro}"
+    return f"{PROJECT_NAME}-{vi.major}-{vi.minor}-{vi.micro}-full"
 
 
 def _poetry_files() -> tuple[bytes, bytes]:

@@ -6,7 +6,7 @@ authors = ["Gabe Joseph <gjoseph92@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 coiled = "^0.2.3"
 cloudpickle = "^2.1.0"
 tomli = "^2.0.1"

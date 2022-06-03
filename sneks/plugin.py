@@ -12,6 +12,7 @@ from subprocess import CalledProcessError
 from typing import TYPE_CHECKING
 
 import cloudpickle
+from distributed.compatibility import to_thread  # type: ignore
 from distributed.diagnostics.plugin import NannyPlugin
 
 if TYPE_CHECKING:
@@ -86,7 +87,7 @@ async def write_compressed_file(data: bytes, path: Path) -> None:
         with open(path, "wb") as f:
             f.write(gzip.decompress(data))
 
-    await asyncio.to_thread(_write)
+    await to_thread(_write)
     print(f"Wrote to {path}")
 
 

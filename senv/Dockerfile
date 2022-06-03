@@ -1,10 +1,13 @@
-ARG PY_VERSION
-FROM python:$PY_VERSION-slim
+ARG IMAGE
+FROM $IMAGE
 
 RUN python3 -c "from urllib.request import urlopen; exec(urlopen('https://install.python-poetry.org').read())"
 
-RUN mv /usr/local/bin/python /usr/local/bin/python.real
+COPY fake-entrypoint.sh /fake-entrypoint.sh
 
-COPY fake-entrypoint.sh /usr/local/bin/python
-COPY fake-entrypoint.sh /usr/local/bin/dask-worker
-COPY fake-entrypoint.sh /usr/local/bin/dask-scheduler
+RUN TARGET="$(which python)" && \
+    BIN="$(dirname $TARGET)" && \
+    mv "$TARGET" "$TARGET.real" && \
+    mv /fake-entrypoint.sh "$TARGET" && \
+    ln -s "$TARGET" "$BIN/dask-worker" && \
+    ln -s "$TARGET" "$BIN/dask-scheduler"

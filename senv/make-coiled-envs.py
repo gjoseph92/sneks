@@ -1,8 +1,9 @@
 """
 Build lots of Docker images and Coiled software environments for every version of Python.
 
-These are lightweight---they're just the official `slim` Python docker images with Poetry installed
-and a tiny script added. When the image launches, it installs more pip packages (dask, distributed, bokeh)
+These are sadly heavy---they're the full Python docker images, so we have things you'd expect
+like git and a builtin CA bundle. We then install Poetry and a tiny script. When the image
+launches, it installs more pip packages (dask, distributed, bokeh)
 via an environment variable, then runs the dask command requested.
 
 This script builds the images locally,
@@ -75,14 +76,15 @@ def tar_docker_context() -> Iterator[Path]:
 
 
 async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
-    name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}"
-    print(f"Building image {name}")
+    name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}-full"
+    base_image = f"python:{py_version}"
+    print(f"Building image {name} from {base_image}")
     try:
         with tarpath.open("rb") as f:
             await docker.images.build(
                 fileobj=f,
                 encoding="gzip",
-                buildargs={"PY_VERSION": py_version},
+                buildargs={"IMAGE": base_image},
                 tag=name,
                 quiet=True,
             )

@@ -7,9 +7,10 @@ if [ -z "$PIP_PACKAGES" ]; then
     exit 1
 fi
 
-mv /usr/local/bin/python.real /usr/local/bin/python
+PYTHON="$(which python)"
+mv $PYTHON.real $PYTHON
 
-python3 -m pip install $PIP_PACKAGES
+python -m pip install $PIP_PACKAGES
 
 # Launch the actual command.
 # TODO this isn't interruptable when `${0}` is `python`
