@@ -2,7 +2,7 @@
 
 Get your snakes in a row.
 
-`sneks` lets you launch a [Dask cluster in the cloud](https://coiled.io/), synced to your local software environment\*, in a single line of code.
+`sneks` lets you launch a [Dask cluster in the cloud](https://coiled.io/), matched to your local software environment\*, in a single line of code. No more dependency mismatches or Docker image building.
 
 ```python
 from sneks import get_client

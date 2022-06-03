@@ -84,7 +84,16 @@ def _poetry_files() -> tuple[bytes, bytes]:
 
 
 def get_client(**kwargs) -> Client:
-    "Launch a dask cluster in the cloud compatible with your current Poetry environment"
+    """
+    Launch a dask cluster in the cloud compatible with your current Poetry environment.
+
+    All keyword arguments are forwarded to `coiled.Cluster`.
+
+    You must be in the root directory of a Poetry project, with a ``pyproject.toml``
+    and ``poetry.lock`` file. All non-dev, non-optional dependencies listed in the
+    lockfile will be installed on the cluster when you connect to it, then the workers
+    will restart if necessary.
+    """
     # TODO deal with async
     # TODO paramspec for signature
 
