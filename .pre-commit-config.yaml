@@ -27,12 +27,10 @@ repos:
     hooks:
       - id: pyright
         name: pyright
-        entry: pyright
+        entry: poetry run pyright
         language: node
         pass_filenames: true
         types: [python]
-        # Replace the version below with the latest pyright version
-        additional_dependencies: ["pyright@1.1.251"]
 ci:
   skip:
     - "pyright"
