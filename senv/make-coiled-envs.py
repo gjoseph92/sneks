@@ -76,7 +76,7 @@ def tar_docker_context() -> Iterator[Path]:
 
 
 async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
-    name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}"
+    name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}-full"
     print(f"Building image {name}")
     try:
         with tarpath.open("rb") as f:
