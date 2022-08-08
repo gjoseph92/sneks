@@ -120,6 +120,7 @@ def get_client(**kwargs) -> Client:
         raise
     target = parse_wait_for_workers(cluster._start_n_workers, wait_for_workers)
     print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
+    cluster.scale(target)
     client.wait_for_workers(target)
     return client
 
