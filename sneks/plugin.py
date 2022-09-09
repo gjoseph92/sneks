@@ -7,9 +7,10 @@ import logging
 import os
 import shutil
 import sys
+from abc import ABC, abstractmethod
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import cloudpickle
 from distributed.compatibility import to_thread  # type: ignore
@@ -21,20 +22,38 @@ if TYPE_CHECKING:
 logger = logging.Logger(__name__)
 
 
-class PoetryDepManager(NannyPlugin):
-    name: str = "PoetryDepManager"
+class DepManagerBase(NannyPlugin, ABC):
+    name: str = "DepManager"
     # ^ There should only ever be one instance of this plugin on a cluster at once.
     # So we always use the same name.
     _compressed_lockfile: bytes
+
+    _LOCKFILE_NAME: ClassVar[str]
+    _TOOL_NAME: ClassVar[str]
 
     def __init__(self, pyproject: bytes, lockfile: bytes) -> None:
         self._compressed_pyproject = gzip.compress(pyproject)
         self._compressed_lockfile = gzip.compress(lockfile)
 
+    @abstractmethod
+    def get_tool_path(self) -> Path:
+        "Get path to the installation tool"
+        raise NotImplementedError
+
+    @abstractmethod
+    async def setup_tool(self, *, tool_path: Path, workdir: Path) -> None:
+        "Do any setup needed before installation"
+        raise NotImplementedError
+
+    @abstractmethod
+    async def install(self, *, tool_path: Path, workdir: Path) -> bool:
+        "Do installation, return whether to restart"
+        raise NotImplementedError
+
     async def setup(self, nanny: Nanny) -> None:
         workdir = Path(nanny.local_directory)
         pyproject_path = workdir / "pyproject.toml"
-        lockfile_path = workdir / "poetry.lock"
+        lockfile_path = workdir / self._LOCKFILE_NAME
         await asyncio.gather(
             write_compressed_file(self._compressed_pyproject, pyproject_path),
             write_compressed_file(self._compressed_lockfile, lockfile_path),
@@ -42,17 +61,12 @@ class PoetryDepManager(NannyPlugin):
 
         # TODO skip installation and don't restart if there's already a lockfile and it's up to date.
 
-        poetry_path = await get_poetry()
-        print(f"Poetry available at {poetry_path}")
+        tool_path = self.get_tool_path()
+        print(f"{self._TOOL_NAME} available at {tool_path}")
 
-        # Make poetry use the global environment
-        # TODO do this without a subprocess
-        # TODO only do this once
-        await run(poetry_path, "config", "virtualenvs.create", "false")
-        print("Poetry configured to use global environment")
+        await self.setup_tool(tool_path=tool_path, workdir=workdir)
 
-        print("Installing dependencies from lockfile...")
-        self.restart = await install(poetry_path, workdir)
+        self.restart = await self.install(tool_path=tool_path, workdir=workdir)
         print(
             "Installation complete! Restarting worker."
             if self.restart
@@ -62,6 +76,8 @@ class PoetryDepManager(NannyPlugin):
     def __getstate__(self) -> dict:
         """
         Make this object unpickleable to dask without its package being installed on workers, via a horrible hack.
+
+        This avoids needing `sneks` to actually be installed on the cluster, just on the client side.
         """
         # HACK, awful horrible hack.
         # The implementation of `distributed.protocol.pickle.dumps` currently tries to plain `pickle.dumps`
@@ -81,6 +97,34 @@ class PoetryDepManager(NannyPlugin):
 
             return self.__dict__
 
+    @staticmethod
+    async def run(
+        program: str | Path, *args: str, tee: bool = True
+    ) -> tuple[bytes, bytes]:
+        call = f"{program} {' '.join(args)}"
+        print(f"Executing {call}")
+        proc = await asyncio.create_subprocess_exec(
+            program,
+            *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        stdout, stderr = await proc.communicate()
+        returncode = proc.returncode
+        assert returncode is not None
+
+        print(f"{call} exited with {returncode}")
+        if tee:
+            if stdout:
+                sys.stdout.write(stdout.decode())
+            if stderr:
+                sys.stderr.write(stderr.decode())
+
+        if returncode != 0:
+            raise CalledProcessError(returncode, call, stdout, stderr)
+        return stdout, stderr
+
 
 async def write_compressed_file(data: bytes, path: Path) -> None:
     def _write():
@@ -91,68 +135,52 @@ async def write_compressed_file(data: bytes, path: Path) -> None:
     print(f"Wrote to {path}")
 
 
-async def get_poetry() -> str:
-    poetry_path = Path.home() / ".local" / "bin" / "poetry"
-    if poetry_path.is_file():
-        return str(poetry_path)
+# Concrete implementations
+##########################
+#
+# Sadly, these all have to be in the same file
+# for pickle-by-value to work. Otherwise,
 
-    elif not (poetry_path := shutil.which("poetry")):
+
+class PoetryDepManager(DepManagerBase):
+    _LOCKFILE_NAME: ClassVar[str] = "poetry.lock"
+    _TOOL_NAME: ClassVar[str] = "Poetry"
+
+    def get_tool_path(self) -> Path:
+        poetry_path = Path.home() / ".local" / "bin" / "poetry"
+        if poetry_path.is_file():
+            return poetry_path
+
+        if poetry_path_which := shutil.which("poetry"):
+            return Path(poetry_path_which)
+
         raise RuntimeError("cannot find poetry installation")
         # We don't want to install poetry in the main environment,
         # because then it might try to remove itself if it's not a dep
         # of the user's environment (it almost certainly isn't).
+        # We'll rely on the docker image having already installed it.
 
-        # print("Installing Poetry...")
-        # await run(
-        #     sys.executable,
-        #     "-m",
-        #     "pip",
-        #     "install",
-        #     "poetry",
-        # )
-        # poetry_path = shutil.which("poetry")
-        # assert poetry_path, "Poetry not found after installation!"
+    async def setup_tool(self, *, tool_path: Path, workdir: Path) -> None:
+        "Make poetry use the global environment"
+        # TODO do this without a subprocess
+        # TODO only do this once
+        await self.run(tool_path, "config", "virtualenvs.create", "false")
+        print("Poetry configured to use global environment")
 
-    return poetry_path
-
-
-async def install(poetry_path: str, workdir: Path) -> bool:
-    cwd = Path.cwd()
-    try:
-        os.chdir(workdir)
-        out, err = await run(
-            poetry_path,
-            "install",
-            "--remove-untracked",
-            "--no-dev",
-            "--no-root",
-            "-n",
-        )
-        # HACK we can do better than this text parsing to decide
-        # whether to restart or not
-        return b"Updating" in out or b"Removing" in out
-    finally:
-        os.chdir(cwd)
-
-
-async def run(program: str | Path, *args: str, tee: bool = True) -> tuple[bytes, bytes]:
-    call = f"{program} {' '.join(args)}"
-    print(f"Executing {call}")
-    proc = await asyncio.create_subprocess_exec(
-        program, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
-
-    stdout, stderr = await proc.communicate()
-    returncode = proc.returncode
-    assert returncode is not None
-
-    print(f"{call} exited with {returncode}")
-    if tee:
-        if stdout:
-            sys.stdout.write(stdout.decode())
-        if stderr:
-            sys.stderr.write(stderr.decode())
-
-    if returncode != 0:
-        raise CalledProcessError(returncode, call, stdout, stderr)
-    return stdout, stderr
+    async def install(self, *, tool_path: Path, workdir: Path) -> bool:
+        cwd = Path.cwd()
+        try:
+            os.chdir(workdir)
+            out, err = await self.run(
+                tool_path,
+                "install",
+                "--remove-untracked",
+                "--no-dev",
+                "--no-root",
+                "-n",
+            )
+            # HACK we can do better than this text parsing to decide
+            # whether to restart or not
+            return b"Updating" in out or b"Removing" in out
+        finally:
+            os.chdir(cwd)
