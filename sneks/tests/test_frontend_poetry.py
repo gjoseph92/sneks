@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from sneks.frontend import _current_package_versions
+from sneks.frontend_poetry import _current_package_versions
 
 
 def test_current_package_versions():
