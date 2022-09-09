@@ -36,7 +36,9 @@ def get_client(**kwargs) -> Client:
     wait_for_workers = kwargs.pop("wait_for_workers", None)
     environ: dict[str, str] = kwargs.pop("environ", {})
 
-    plugin, new_env = get_plugin_env_poetry(["dask", "distributed", "bokeh"])
+    plugin, new_env = get_plugin_env_poetry(
+        ["dask", "distributed", "bokeh", "cloudpickle", "msgpack"]
+    )
     environ.update(new_env)
 
     cluster = coiled.Cluster(
