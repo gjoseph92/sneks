@@ -12,6 +12,7 @@ from rich import print
 from sneks.frontend_poetry import get_plugin_env_poetry
 
 PROJECT_NAME = "sneks"
+REQUIRED_PACKAGES = ["dask", "distributed", "bokeh", "cloudpickle", "msgpack"]
 
 
 def _senv() -> str:
@@ -36,9 +37,7 @@ def get_client(**kwargs) -> Client:
     wait_for_workers = kwargs.pop("wait_for_workers", None)
     environ: dict[str, str] = kwargs.pop("environ", {})
 
-    plugin, new_env = get_plugin_env_poetry(
-        ["dask", "distributed", "bokeh", "cloudpickle", "msgpack"]
-    )
+    plugin, new_env = get_plugin_env_poetry(REQUIRED_PACKAGES)
     environ.update(new_env)
 
     cluster = coiled.Cluster(

@@ -64,23 +64,27 @@ class TestPickle:
 def test_plugin(function_scoped_container_getter):
     time.sleep(1)  # FIXME stream is closed during handshake without this, wtf??
     network_info = function_scoped_container_getter.get("scheduler").network_info[0]
+    print("trying to connect")
     with Client(
         f"tcp://{network_info.hostname}:{network_info.host_port}", set_as_default=False
     ) as client:
+        print("connected")
 
         def can_import(module: str):
             importlib.import_module(module)
             return True
 
         with pytest.raises(ImportError):
-            print(client.submit(can_import, "black").result())
+            print(client.submit(can_import, "tomli").result())
+        print("can't import")
 
-        env = Path(__file__).parent / "env-for-running-poetry"
-        with open(env / "pyproject.toml", "rb") as f:
+        root = Path(__file__).parent.parent.parent
+        with open(root / "pyproject.toml", "rb") as f:
             pyproject = f.read()
-        with open(env / "poetry.lock", "rb") as f:
+        with open(root / "poetry.lock", "rb") as f:
             lockfile = f.read()
 
+        print("registering")
         plugin = PoetryDepManager(pyproject, lockfile)
         try:
             client.register_worker_plugin(plugin)
@@ -89,14 +93,18 @@ def test_plugin(function_scoped_container_getter):
             print("[stderr]", e.stderr.decode())
             raise
 
-        assert client.submit(can_import, "black", pure=False).result() is True
+        print("registered")
+        assert client.submit(can_import, "tomli", pure=False).result(timeout=5) is True
+        print("worked")
 
         pids = client.run(os.getpid)
         # Registering with same deps doesn't cause restart
+        print("registering again")
         try:
             client.register_worker_plugin(plugin)
         except subprocess.CalledProcessError as e:
             print("[stdout]", e.stdout.decode())
             print("[stderr]", e.stderr.decode())
             raise
+        print("registered")
         assert client.run(os.getpid) == pids
