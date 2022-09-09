@@ -35,15 +35,20 @@ class DepManagerBase(NannyPlugin, ABC):
         self._compressed_pyproject = gzip.compress(pyproject)
         self._compressed_lockfile = gzip.compress(lockfile)
 
-    @abstractmethod
     def get_tool_path(self) -> Path:
         "Get path to the installation tool"
-        raise NotImplementedError
+        tool_path = Path.home() / ".local" / "bin" / self.TOOL_NAME.lower()
+        if tool_path.is_file():
+            return tool_path
 
-    @abstractmethod
+        if tool_path_which := shutil.which(self.TOOL_NAME.lower()):
+            return Path(tool_path_which)
+
+        raise RuntimeError(f"cannot find {self.TOOL_NAME} installation")
+
     async def setup_tool(self, *, tool_path: Path, workdir: Path) -> None:
         "Do any setup needed before installation"
-        raise NotImplementedError
+        return
 
     @abstractmethod
     async def install(self, *, tool_path: Path, workdir: Path) -> bool:
@@ -61,7 +66,7 @@ class DepManagerBase(NannyPlugin, ABC):
 
         # TODO skip installation and don't restart if there's already a lockfile and it's up to date.
 
-        tool_path = self.get_tool_path()
+        tool_path = self.get_tool_path().absolute()
         print(f"{self.TOOL_NAME} available at {tool_path}")
 
         await self.setup_tool(tool_path=tool_path, workdir=workdir)
@@ -99,7 +104,11 @@ class DepManagerBase(NannyPlugin, ABC):
 
     @staticmethod
     async def run(
-        program: str | Path, *args: str, tee: bool = True
+        program: str | Path,
+        *args: str,
+        tee: bool = True,
+        cwd: Path | None = None,
+        env: dict[str, str] | None = None,
     ) -> tuple[bytes, bytes]:
         call = f"{program} {' '.join(args)}"
         print(f"Executing {call}")
@@ -108,6 +117,8 @@ class DepManagerBase(NannyPlugin, ABC):
             *args,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            cwd=cwd,
+            env=env,
         )
 
         stdout, stderr = await proc.communicate()
@@ -146,20 +157,6 @@ class PoetryDepManager(DepManagerBase):
     LOCKFILE_NAME: ClassVar[str] = "poetry.lock"
     TOOL_NAME: ClassVar[str] = "Poetry"
 
-    def get_tool_path(self) -> Path:
-        poetry_path = Path.home() / ".local" / "bin" / "poetry"
-        if poetry_path.is_file():
-            return poetry_path
-
-        if poetry_path_which := shutil.which("poetry"):
-            return Path(poetry_path_which)
-
-        raise RuntimeError("cannot find poetry installation")
-        # We don't want to install poetry in the main environment,
-        # because then it might try to remove itself if it's not a dep
-        # of the user's environment (it almost certainly isn't).
-        # We'll rely on the docker image having already installed it.
-
     async def setup_tool(self, *, tool_path: Path, workdir: Path) -> None:
         "Make poetry use the global environment"
         # TODO do this without a subprocess
@@ -187,5 +184,27 @@ class PoetryDepManager(DepManagerBase):
 
 
 class PdmDepManager(DepManagerBase):
-    _LOCKFILE_NAME: ClassVar[str] = "pdm.lock"
-    _TOOL_NAME: ClassVar[str] = "PDM"
+    LOCKFILE_NAME: ClassVar[str] = "pdm.lock"
+    TOOL_NAME: ClassVar[str] = "PDM"
+
+    async def install(self, *, tool_path: Path, workdir: Path) -> bool:
+        await self.run(
+            tool_path,
+            "info",
+            cwd=workdir,
+            env=dict(VIRTUAL_ENV=str(Path(sys.executable).parent.parent.absolute())),
+        )
+        out, err = await self.run(
+            tool_path,
+            "sync",
+            "--only-keep",
+            "--no-self",
+            "--no-isolation",
+            cwd=workdir,
+            # HACK: trick PDM into thinking it's running in a virtualenv so it installs
+            # into system python
+            env=dict(VIRTUAL_ENV=str(Path(sys.executable).parent.parent.absolute())),
+        )
+        # HACK we can do better than this text parsing to decide
+        # whether to restart or not
+        return b"Updating" in out or b"Removing" in out

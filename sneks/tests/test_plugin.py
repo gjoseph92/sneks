@@ -11,7 +11,7 @@ import pytest
 from distributed.client import Client
 from distributed.protocol.pickle import dumps
 
-from sneks.plugin import PoetryDepManager
+from sneks.plugin import PdmDepManager, PoetryDepManager
 
 from .update_test_envs import update_test_envs
 
@@ -79,7 +79,8 @@ def updated_test_envs():
     update_test_envs()
 
 
-def test_plugin(updated_test_envs, function_scoped_container_getter):
+@pytest.mark.parametrize("plugin_type", [PoetryDepManager, PdmDepManager])
+def test_plugin(updated_test_envs, function_scoped_container_getter, plugin_type):
     time.sleep(1)  # FIXME stream is closed during handshake without this, wtf??
     network_info = function_scoped_container_getter.get("scheduler").network_info[0]
     with Client(
@@ -96,13 +97,15 @@ def test_plugin(updated_test_envs, function_scoped_container_getter):
         with pytest.raises(ImportError):
             print(client.submit(can_import, "black").result())
 
-        root = Path(__file__).parent / "env-for-running-poetry"
+        root = (
+            Path(__file__).parent / f"env-for-running-{plugin_type.TOOL_NAME.lower()}"
+        )
         with open(root / "pyproject.toml", "rb") as f:
             pyproject = f.read()
-        with open(root / "poetry.lock", "rb") as f:
+        with open(root / plugin_type.LOCKFILE_NAME, "rb") as f:
             lockfile = f.read()
 
-        plugin = PoetryDepManager(pyproject, lockfile)
+        plugin = plugin_type(pyproject, lockfile)
         try:
             client.register_worker_plugin(plugin)
         except subprocess.CalledProcessError as e:

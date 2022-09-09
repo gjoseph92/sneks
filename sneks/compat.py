@@ -6,8 +6,9 @@ from typing import Callable
 import tomli
 
 from sneks.constants import REQUIRED_PACKAGES
+from sneks.parse_pdm import current_versions_pdm
 from sneks.parse_poetry import current_versions_poetry
-from sneks.plugin import DepManagerBase, PoetryDepManager
+from sneks.plugin import DepManagerBase, PdmDepManager, PoetryDepManager
 
 
 def find_pyproject() -> Path:
@@ -36,6 +37,9 @@ def get_backend() -> tuple[DepManagerBase, dict[str, str]]:
     if tool == "poetry":
         plugin_type = PoetryDepManager
         current_versions_from_lockfile = current_versions_poetry
+    elif tool == "sneks":
+        plugin_type = PdmDepManager
+        current_versions_from_lockfile = current_versions_pdm
     else:
         raise ValueError(f"Unsupported build tool {tool}")
 
