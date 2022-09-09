@@ -24,6 +24,14 @@ def update_poetry_env(env: Path, versions: list[str]) -> None:
     )
 
 
+# def update_pdm_env(env: Path, versions: list[str]) -> None:
+#     if not (env / "pyproject.toml").exists():
+#         subprocess.run(["poetry", "init", "-n"], shell=False, check=True, cwd=env)
+#     subprocess.run(
+#         ["poetry", "add", "--lock"] + versions, shell=False, check=True, cwd=env
+#     )
+
+
 def update_test_envs():
     tests = Path(__file__).parent
     versions = [

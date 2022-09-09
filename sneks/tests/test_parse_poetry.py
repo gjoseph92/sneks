@@ -28,3 +28,8 @@ def test_current_package_versions():
         NotImplementedError, match="mypy is only an optional dependency"
     ):
         current_versions_poetry(["mypy"], lockfile=lockfile)
+
+    with pytest.raises(
+        NotImplementedError, match="'sneks' is installed as a path dependency"
+    ):
+        current_versions_poetry(["sneks"], lockfile=lockfile)

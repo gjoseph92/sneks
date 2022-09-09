@@ -33,7 +33,13 @@ def current_versions_poetry(packages: list[str], lockfile: bytes) -> list[str]:
                 "For now, please make this a non-optional dependency."
             )
         if source := p.get("source"):
-            if source["type"] != "git":
+            if (stype := source["type"]) != "git":
+                if stype == "directory":
+                    raise NotImplementedError(
+                        f"Required package {name!r} is installed as a path dependency. "
+                        "Uploading of local code is not supported yet. Please install from "
+                        "a Git URL, or use a version on PyPi."
+                    )
                 raise NotImplementedError(
                     f"Unsupported package source type {source['type']!r} for {name}. "
                     f"Please open an issue.\n{source=}"
