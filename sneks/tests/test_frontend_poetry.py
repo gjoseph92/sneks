@@ -6,7 +6,7 @@ from sneks.frontend_poetry import _current_package_versions
 
 
 def test_current_package_versions():
-    env = Path(__file__).parent / "env-for-parsing"
+    env = Path(__file__).parent / "env-for-parsing-poetry"
     with open(env / "poetry.lock", "rb") as f:
         lockfile = f.read()
 

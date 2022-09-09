@@ -75,7 +75,7 @@ def test_plugin(function_scoped_container_getter):
         with pytest.raises(ImportError):
             print(client.submit(can_import, "black").result())
 
-        env = Path(__file__).parent / "env-for-running"
+        env = Path(__file__).parent / "env-for-running-poetry"
         with open(env / "pyproject.toml", "rb") as f:
             pyproject = f.read()
         with open(env / "poetry.lock", "rb") as f:
