@@ -61,30 +61,31 @@ class TestPickle:
         assert "ModuleNotFoundError" in proc.stderr
 
 
+# NOTE: the versions in `env-for-running-poetry` must match what's installed locally.
+# If this is hanging, first ensure you've run `scripts/update-test-envs.py`.
 def test_plugin(function_scoped_container_getter):
     time.sleep(1)  # FIXME stream is closed during handshake without this, wtf??
     network_info = function_scoped_container_getter.get("scheduler").network_info[0]
-    print("trying to connect")
     with Client(
         f"tcp://{network_info.hostname}:{network_info.host_port}", set_as_default=False
     ) as client:
-        print("connected")
 
         def can_import(module: str):
             importlib.import_module(module)
             return True
 
-        with pytest.raises(ImportError):
-            print(client.submit(can_import, "tomli").result())
-        print("can't import")
+        # See `conftest.py` for where `yapf` gets added to docker image
+        assert client.submit(can_import, "yapf", pure=False).result(timeout=5) is True
 
-        root = Path(__file__).parent.parent.parent
+        with pytest.raises(ImportError):
+            print(client.submit(can_import, "black").result())
+
+        root = Path(__file__).parent / "env-for-running-poetry"
         with open(root / "pyproject.toml", "rb") as f:
             pyproject = f.read()
         with open(root / "poetry.lock", "rb") as f:
             lockfile = f.read()
 
-        print("registering")
         plugin = PoetryDepManager(pyproject, lockfile)
         try:
             client.register_worker_plugin(plugin)
@@ -93,18 +94,18 @@ def test_plugin(function_scoped_container_getter):
             print("[stderr]", e.stderr.decode())
             raise
 
-        print("registered")
-        assert client.submit(can_import, "tomli", pure=False).result(timeout=5) is True
-        print("worked")
+        # See `scripts/update-test-envs.py` for where `black` gets added to poetry reqs
+        assert client.submit(can_import, "black", pure=False).result(timeout=5) is True
+
+        with pytest.raises(ImportError):
+            print(client.submit(can_import, "yapf").result())
 
         pids = client.run(os.getpid)
         # Registering with same deps doesn't cause restart
-        print("registering again")
         try:
             client.register_worker_plugin(plugin)
         except subprocess.CalledProcessError as e:
             print("[stdout]", e.stdout.decode())
             print("[stderr]", e.stderr.decode())
             raise
-        print("registered")
         assert client.run(os.getpid) == pids

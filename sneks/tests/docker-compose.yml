@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        PIP_PACKAGES: "${PIP_PACKAGES:?pip_packages is required}"
+        PIP_PACKAGES: "${PIP_PACKAGES}"
     command: dask-scheduler
     ports:
       - "8786:8786"

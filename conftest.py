@@ -17,5 +17,5 @@ def set_pip_packages(required_packages: list[str]):
     print(f'PIP_PACKAGES="{pip_packages}"')
 
 
-# Include coiled since the bloat makes it very slow to install during tests
-set_pip_packages(REQUIRED_PACKAGES + ["coiled", "rich"])
+# `yapf` used in tests to verify it's removed by installation
+set_pip_packages(REQUIRED_PACKAGES + ["yapf"])
