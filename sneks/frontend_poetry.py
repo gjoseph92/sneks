@@ -5,7 +5,7 @@ import tomli
 from sneks.plugin import PoetryDepManager
 
 
-def _current_package_versions(*packages: str, lockfile: bytes) -> list[str]:
+def _current_package_versions(packages: list[str], lockfile: bytes) -> list[str]:
     lock = tomli.loads(lockfile.decode())
     pset = set(packages)
     matches = {name: p for p in lock["package"] if (name := p["name"]) in pset}
@@ -52,10 +52,10 @@ def _current_package_versions(*packages: str, lockfile: bytes) -> list[str]:
     return pip_args
 
 
-def environ(lockfile: bytes) -> dict[str, str]:
+def environ(lockfile: bytes, initial_packages: list[str]) -> dict[str, str]:
     return {
         "PIP_PACKAGES": " ".join(
-            _current_package_versions("dask", "distributed", "bokeh", lockfile=lockfile)
+            _current_package_versions(initial_packages, lockfile=lockfile)
         )
     }
 
@@ -69,6 +69,8 @@ def poetry_files() -> tuple[bytes, bytes]:
     return pyproject, lockfile
 
 
-def get_plugin_env_poetry() -> tuple[PoetryDepManager, dict[str, str]]:
+def get_plugin_env_poetry(
+    initial_packages: list[str],
+) -> tuple[PoetryDepManager, dict[str, str]]:
     pyproject, lockfile = poetry_files()
-    return PoetryDepManager(pyproject, lockfile), environ(lockfile)
+    return PoetryDepManager(pyproject, lockfile), environ(lockfile, initial_packages)

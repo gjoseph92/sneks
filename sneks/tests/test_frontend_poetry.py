@@ -11,7 +11,7 @@ def test_current_package_versions():
         lockfile = f.read()
 
     assert _current_package_versions(
-        "dask", "distributed", "yapf", lockfile=lockfile
+        ["dask", "distributed", "yapf"], lockfile=lockfile
     ) == [
         "dask==2022.5.2",
         "distributed==2022.5.2",
@@ -19,12 +19,12 @@ def test_current_package_versions():
     ]
 
     with pytest.raises(ValueError, match="poetry add blaze scipy"):
-        _current_package_versions("blaze", "bokeh", "scipy", lockfile=lockfile)
+        _current_package_versions(["blaze", "bokeh", "scipy"], lockfile=lockfile)
 
     with pytest.raises(ValueError, match="flake8 is only a dev dependency"):
-        _current_package_versions("flake8", lockfile=lockfile)
+        _current_package_versions(["flake8"], lockfile=lockfile)
 
     with pytest.raises(
         NotImplementedError, match="mypy is only an optional dependency"
     ):
-        _current_package_versions("mypy", lockfile=lockfile)
+        _current_package_versions(["mypy"], lockfile=lockfile)
