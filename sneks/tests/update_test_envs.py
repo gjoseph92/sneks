@@ -25,8 +25,7 @@ def update_poetry_env(env: Path, versions: list[str]) -> None:
 
 
 def update_test_envs():
-    root = Path(__file__).parent.parent
-    tests = root / "sneks" / "tests"
+    tests = Path(__file__).parent
     versions = [
         f"{pkg}=={importlib.metadata.version(pkg)}"
         for pkg in REQUIRED_PACKAGES

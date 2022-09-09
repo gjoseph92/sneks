@@ -13,6 +13,8 @@ from distributed.protocol.pickle import dumps
 
 from sneks.plugin import PoetryDepManager
 
+from .update_test_envs import update_test_envs
+
 pytest_plugins = ["docker_compose"]
 
 
@@ -31,7 +33,12 @@ class TestPickle:
             [
                 sys.executable,
                 "-c",
-                f"import cloudpickle; print(cloudpickle.loads({pickled!r})._compressed_lockfile)",
+                (
+                    "import cloudpickle; "
+                    "import sys; "
+                    "sys.modules['sneks'] = None; "
+                    f"print(cloudpickle.loads({pickled!r})._compressed_lockfile)"
+                ),
             ],
             cwd="/",
             capture_output=True,
@@ -51,19 +58,28 @@ class TestPickle:
             [
                 sys.executable,
                 "-c",
-                f"import cloudpickle; print(cloudpickle.loads({base_pickled!r}).msg)",
+                (
+                    "import cloudpickle; "
+                    "import sys; "
+                    "sys.modules['sneks'] = None; "
+                    f"print(cloudpickle.loads({base_pickled!r}).msg)"
+                ),
             ],
             cwd="/",
             capture_output=True,
             text=True,
         )
-        assert proc.returncode != 0
+        assert proc.returncode != 0, proc.stdout
         assert "ModuleNotFoundError" in proc.stderr
 
 
-# NOTE: the versions in `env-for-running-poetry` must match what's installed locally.
-# If this is hanging, first ensure you've run `scripts/update-test-envs.py`.
-def test_plugin(function_scoped_container_getter):
+@pytest.fixture(scope="session")
+def updated_test_envs():
+    "Ensure the versions in ``env-for-running-*`` match what's installed locally."
+    update_test_envs()
+
+
+def test_plugin(updated_test_envs, function_scoped_container_getter):
     time.sleep(1)  # FIXME stream is closed during handshake without this, wtf??
     network_info = function_scoped_container_getter.get("scheduler").network_info[0]
     with Client(
@@ -94,7 +110,7 @@ def test_plugin(function_scoped_container_getter):
             print("[stderr]", e.stderr.decode())
             raise
 
-        # See `scripts/update-test-envs.py` for where `black` gets added to poetry reqs
+        # See `update_test_envs.py` for where `black` gets added to poetry reqs
         assert client.submit(can_import, "black", pure=False).result(timeout=5) is True
 
         with pytest.raises(ImportError):
