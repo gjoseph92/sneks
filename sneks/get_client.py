@@ -9,10 +9,8 @@ from distributed.client import Client
 from distributed.worker import get_client as get_default_client
 from rich import print
 
-from sneks.frontend_poetry import get_plugin_env_poetry
-
-PROJECT_NAME = "sneks"
-REQUIRED_PACKAGES = ["dask", "distributed", "bokeh", "cloudpickle", "msgpack"]
+from sneks.compat import get_backend
+from sneks.constants import PROJECT_NAME
 
 
 def _senv() -> str:
@@ -37,7 +35,7 @@ def get_client(**kwargs) -> Client:
     wait_for_workers = kwargs.pop("wait_for_workers", None)
     environ: dict[str, str] = kwargs.pop("environ", {})
 
-    plugin, new_env = get_plugin_env_poetry(REQUIRED_PACKAGES)
+    plugin, new_env = get_backend()
     environ.update(new_env)
 
     cluster = coiled.Cluster(

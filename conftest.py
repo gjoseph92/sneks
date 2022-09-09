@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sneks.frontend import REQUIRED_PACKAGES
+from sneks.constants import REQUIRED_PACKAGES
 
 # Set PIP_PACKAGES env var for docker compose to pick up, ensuring versions installed in docker
 # match versions installed locally

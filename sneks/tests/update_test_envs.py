@@ -13,7 +13,7 @@ from pathlib import Path
 
 from rich import print
 
-from sneks.frontend import REQUIRED_PACKAGES
+from sneks.constants import REQUIRED_PACKAGES
 
 
 def update_poetry_env(env: Path, versions: list[str]) -> None:

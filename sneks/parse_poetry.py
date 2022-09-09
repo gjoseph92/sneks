@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import tomli
 
-from sneks.plugin import PoetryDepManager
 
-
-def _current_package_versions(packages: list[str], lockfile: bytes) -> list[str]:
+def current_versions_poetry(packages: list[str], lockfile: bytes) -> list[str]:
+    "Determine what versions of ``packages`` are currently installed by parsing the lockfile"
     lock = tomli.loads(lockfile.decode())
     pset = set(packages)
     matches = {name: p for p in lock["package"] if (name := p["name"]) in pset}
@@ -50,27 +49,3 @@ def _current_package_versions(packages: list[str], lockfile: bytes) -> list[str]
         pip_args.append(pip_arg)
 
     return pip_args
-
-
-def environ(lockfile: bytes, initial_packages: list[str]) -> dict[str, str]:
-    return {
-        "PIP_PACKAGES": " ".join(
-            _current_package_versions(initial_packages, lockfile=lockfile)
-        )
-    }
-
-
-def poetry_files() -> tuple[bytes, bytes]:
-    # FIXME much to do here. Actually find them, validate, etc.
-    with open("pyproject.toml", "rb") as f:
-        pyproject = f.read()
-    with open("poetry.lock", "rb") as f:
-        lockfile = f.read()
-    return pyproject, lockfile
-
-
-def get_plugin_env_poetry(
-    initial_packages: list[str],
-) -> tuple[PoetryDepManager, dict[str, str]]:
-    pyproject, lockfile = poetry_files()
-    return PoetryDepManager(pyproject, lockfile), environ(lockfile, initial_packages)

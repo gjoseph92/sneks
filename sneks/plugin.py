@@ -28,8 +28,8 @@ class DepManagerBase(NannyPlugin, ABC):
     # So we always use the same name.
     _compressed_lockfile: bytes
 
-    _LOCKFILE_NAME: ClassVar[str]
-    _TOOL_NAME: ClassVar[str]
+    LOCKFILE_NAME: ClassVar[str]
+    TOOL_NAME: ClassVar[str]
 
     def __init__(self, pyproject: bytes, lockfile: bytes) -> None:
         self._compressed_pyproject = gzip.compress(pyproject)
@@ -53,7 +53,7 @@ class DepManagerBase(NannyPlugin, ABC):
     async def setup(self, nanny: Nanny) -> None:
         workdir = Path(nanny.local_directory)
         pyproject_path = workdir / "pyproject.toml"
-        lockfile_path = workdir / self._LOCKFILE_NAME
+        lockfile_path = workdir / self.LOCKFILE_NAME
         await asyncio.gather(
             write_compressed_file(self._compressed_pyproject, pyproject_path),
             write_compressed_file(self._compressed_lockfile, lockfile_path),
@@ -62,7 +62,7 @@ class DepManagerBase(NannyPlugin, ABC):
         # TODO skip installation and don't restart if there's already a lockfile and it's up to date.
 
         tool_path = self.get_tool_path()
-        print(f"{self._TOOL_NAME} available at {tool_path}")
+        print(f"{self.TOOL_NAME} available at {tool_path}")
 
         await self.setup_tool(tool_path=tool_path, workdir=workdir)
 
@@ -143,8 +143,8 @@ async def write_compressed_file(data: bytes, path: Path) -> None:
 
 
 class PoetryDepManager(DepManagerBase):
-    _LOCKFILE_NAME: ClassVar[str] = "poetry.lock"
-    _TOOL_NAME: ClassVar[str] = "Poetry"
+    LOCKFILE_NAME: ClassVar[str] = "poetry.lock"
+    TOOL_NAME: ClassVar[str] = "Poetry"
 
     def get_tool_path(self) -> Path:
         poetry_path = Path.home() / ".local" / "bin" / "poetry"
@@ -184,3 +184,8 @@ class PoetryDepManager(DepManagerBase):
             return b"Updating" in out or b"Removing" in out
         finally:
             os.chdir(cwd)
+
+
+class PdmDepManager(DepManagerBase):
+    _LOCKFILE_NAME: ClassVar[str] = "pdm.lock"
+    _TOOL_NAME: ClassVar[str] = "PDM"
