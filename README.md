@@ -15,7 +15,7 @@ client = get_client()
 ## Installation
 
 ```shell
-poetry add --dev "git+https://github.com/gjoseph92/sneks.git@main"
+poetry add -G dev sneks-sync
 ```
 
 ## A full example:
@@ -23,7 +23,7 @@ poetry add --dev "git+https://github.com/gjoseph92/sneks.git@main"
 ```shell
 mkdir example && cd example
 poetry init -n
-poetry add --dev "git+https://github.com/gjoseph92/sneks.git@main"
+poetry add -G dev sneks-sync
 poetry add distributed==2022.5.2 dask==2022.5.2 bokeh pandas pyarrow  # and whatever else you want
 ```
 ```python
