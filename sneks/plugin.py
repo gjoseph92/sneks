@@ -171,8 +171,8 @@ class PoetryDepManager(DepManagerBase):
             out, err = await self.run(
                 tool_path,
                 "install",
-                "--remove-untracked",
-                "--no-dev",
+                "--sync",
+                "--only main",
                 "--no-root",
                 "-n",
             )
