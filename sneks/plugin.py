@@ -177,7 +177,7 @@ class PoetryDepManager(DepManagerBase):
                 tool_path,
                 "install",
                 "--sync",
-                "--only main",
+                "--only=main",
                 "--no-root",
                 "-n",
             )
