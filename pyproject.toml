@@ -1,9 +1,12 @@
 [tool.poetry]
-name = "sneks"
+name = "sneks-sync"
 version = "0.1.0"
 description = "Launch a Dask cluster from a virtual environment"
 authors = ["Gabe Joseph <gjoseph92@gmail.com>"]
 license = "MIT"
+packages = [
+    { include = "sneks" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
