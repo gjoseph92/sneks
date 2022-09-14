@@ -11,7 +11,9 @@ import pytest
 from distributed.client import Client
 from distributed.protocol.pickle import dumps
 
-from sneks.plugin import PoetryDepManager
+from sneks.plugin import PdmDepManager, PoetryDepManager
+
+from .update_test_envs import update_test_envs
 
 pytest_plugins = ["docker_compose"]
 
@@ -31,7 +33,12 @@ class TestPickle:
             [
                 sys.executable,
                 "-c",
-                f"import cloudpickle; print(cloudpickle.loads({pickled!r})._compressed_lockfile)",
+                (
+                    "import cloudpickle; "
+                    "import sys; "
+                    "sys.modules['sneks'] = None; "
+                    f"print(cloudpickle.loads({pickled!r})._compressed_lockfile)"
+                ),
             ],
             cwd="/",
             capture_output=True,
@@ -51,17 +58,29 @@ class TestPickle:
             [
                 sys.executable,
                 "-c",
-                f"import cloudpickle; print(cloudpickle.loads({base_pickled!r}).msg)",
+                (
+                    "import cloudpickle; "
+                    "import sys; "
+                    "sys.modules['sneks'] = None; "
+                    f"print(cloudpickle.loads({base_pickled!r}).msg)"
+                ),
             ],
             cwd="/",
             capture_output=True,
             text=True,
         )
-        assert proc.returncode != 0
+        assert proc.returncode != 0, proc.stdout
         assert "ModuleNotFoundError" in proc.stderr
 
 
-def test_plugin(function_scoped_container_getter):
+@pytest.fixture(scope="session")
+def updated_test_envs():
+    "Ensure the versions in ``env-for-running-*`` match what's installed locally."
+    update_test_envs()
+
+
+@pytest.mark.parametrize("plugin_type", [PoetryDepManager, PdmDepManager])
+def test_plugin(updated_test_envs, function_scoped_container_getter, plugin_type):
     time.sleep(1)  # FIXME stream is closed during handshake without this, wtf??
     network_info = function_scoped_container_getter.get("scheduler").network_info[0]
     with Client(
@@ -72,31 +91,43 @@ def test_plugin(function_scoped_container_getter):
             importlib.import_module(module)
             return True
 
+        # See `conftest.py` for where `yapf` gets added to docker image
+        assert client.submit(can_import, "yapf", pure=False).result(timeout=5) is True
+
         with pytest.raises(ImportError):
             print(client.submit(can_import, "black").result())
 
-        env = Path(__file__).parent / "env-for-running"
-        with open(env / "pyproject.toml", "rb") as f:
+        root = (
+            Path(__file__).parent / f"env-for-running-{plugin_type.TOOL_NAME.lower()}"
+        )
+        with open(root / "pyproject.toml", "rb") as f:
             pyproject = f.read()
-        with open(env / "poetry.lock", "rb") as f:
+        with open(root / plugin_type.LOCKFILE_NAME, "rb") as f:
             lockfile = f.read()
 
-        plugin = PoetryDepManager(pyproject, lockfile)
-        try:
-            client.register_worker_plugin(plugin)
-        except subprocess.CalledProcessError as e:
-            print("[stdout]", e.stdout.decode())
-            print("[stderr]", e.stderr.decode())
-            raise
-
-        assert client.submit(can_import, "black", pure=False).result() is True
-
         pids = client.run(os.getpid)
-        # Registering with same deps doesn't cause restart
+        plugin = plugin_type(pyproject, lockfile)
         try:
             client.register_worker_plugin(plugin)
         except subprocess.CalledProcessError as e:
             print("[stdout]", e.stdout.decode())
             print("[stderr]", e.stderr.decode())
             raise
-        assert client.run(os.getpid) == pids
+
+        # See `update_test_envs.py` for where `black` gets added to poetry reqs
+        assert client.submit(can_import, "black", pure=False).result(timeout=5) is True
+
+        with pytest.raises(ImportError):
+            print(client.submit(can_import, "yapf").result())
+
+        # Workers were restarted
+        assert client.run(os.getpid) != pids
+
+        # Registering with same deps doesn't cause restart
+        pids = client.run(os.getpid)
+        try:
+            client.register_worker_plugin(plugin)
+        except subprocess.CalledProcessError as e:
+            print("[stdout]", e.stdout.decode())
+            print("[stderr]", e.stderr.decode())
+            raise

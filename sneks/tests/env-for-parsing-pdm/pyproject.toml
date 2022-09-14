@@ -1,0 +1,31 @@
+[project]
+authors = [
+  {name = "Gabe Joseph", email = "gjoseph92@gmail.com"},
+]
+dependencies = [
+  "bokeh==2.4.3",
+  "distributed==2022.5.2",
+  "black==22.3.0",
+  "yapf @ git+https://github.com/google/yapf.git@v0.31.0",
+  "sneks @ file:///Users/gabe/dev/sneks",
+]
+description = ""
+license = {text = "MIT"}
+name = "env-for-parsing-pdm"
+requires-python = ">=3.9,<4.0"
+version = "0.1.0"
+[project.urls]
+
+[build-system]
+build-backend = "pdm.pep517.api"
+requires = ["pdm-pep517>=1.0.0"]
+
+[tool]
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+  "flake8==4.0.1",
+]
+
+[tool.pdm.build]
+includes = []

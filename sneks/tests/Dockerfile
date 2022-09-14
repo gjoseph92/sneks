@@ -1,8 +1,10 @@
-# Use an image with the basics pre-installed for faster tests
-
 ARG PY_VERSION=3.9.1
-FROM python:$PY_VERSION-slim
+FROM jabriel/sneks:$PY_VERSION-full
+ARG PIP_PACKAGES
 
-RUN python3 -c "from urllib.request import urlopen; exec(urlopen('https://install.python-poetry.org').read())"
+# Pre-install the required deps for faster tests
 
-RUN pip install distributed bokeh
+ENV PIP_PACKAGES="${PIP_PACKAGES}"
+
+# Trigger installtion of pip packages as side effect
+RUN python
