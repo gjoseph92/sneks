@@ -197,6 +197,7 @@ class PdmDepManager(DepManagerBase):
         out, err = await self.run(
             tool_path,
             "sync",
+            "--prod",
             "--clean",
             "--no-self",
             "--no-isolation",
