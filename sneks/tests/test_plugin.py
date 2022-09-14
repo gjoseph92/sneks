@@ -105,6 +105,7 @@ def test_plugin(updated_test_envs, function_scoped_container_getter, plugin_type
         with open(root / plugin_type.LOCKFILE_NAME, "rb") as f:
             lockfile = f.read()
 
+        pids = client.run(os.getpid)
         plugin = plugin_type(pyproject, lockfile)
         try:
             client.register_worker_plugin(plugin)
@@ -119,12 +120,14 @@ def test_plugin(updated_test_envs, function_scoped_container_getter, plugin_type
         with pytest.raises(ImportError):
             print(client.submit(can_import, "yapf").result())
 
-        pids = client.run(os.getpid)
+        # Workers were restarted
+        assert client.run(os.getpid) != pids
+
         # Registering with same deps doesn't cause restart
+        pids = client.run(os.getpid)
         try:
             client.register_worker_plugin(plugin)
         except subprocess.CalledProcessError as e:
             print("[stdout]", e.stdout.decode())
             print("[stderr]", e.stderr.decode())
             raise
-        assert client.run(os.getpid) == pids

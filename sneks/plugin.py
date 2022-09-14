@@ -197,7 +197,7 @@ class PdmDepManager(DepManagerBase):
         out, err = await self.run(
             tool_path,
             "sync",
-            "--only-keep",
+            "--clean",
             "--no-self",
             "--no-isolation",
             cwd=workdir,
@@ -207,4 +207,4 @@ class PdmDepManager(DepManagerBase):
         )
         # HACK we can do better than this text parsing to decide
         # whether to restart or not
-        return b"Updating" in out or b"Removing" in out
+        return b"nothing to do" not in out
