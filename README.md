@@ -10,7 +10,7 @@ from sneks import get_client
 client = get_client()
 ```
 
-\*your local [Poetry](https://python-poetry.org/) environment. You must use poetry. Poetry is what sensible people use, and you are sensible.
+\*your local [Poetry](https://python-poetry.org/) or [PDM](https://pdm.fming.dev/latest/) environment. You must use poetry or PDM. Locking package managers are what sensible people use, and you are sensible.
 
 ## Installation
 
