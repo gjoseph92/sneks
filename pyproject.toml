@@ -23,6 +23,7 @@ pytest = "^7.1.2"
 pyright = "^1.1.251"
 pytest-docker-compose = "^3.2.1"
 aiodocker = "^0.21.0"
+twine = "^4.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
