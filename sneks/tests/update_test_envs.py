@@ -1,10 +1,10 @@
 """
-Run this script any time the main environment is updated.
-
 This keeps the fixture lockfiles used in tests up to date, so their distributed, cloudpickle, etc.
 versions match what will be running on the client. Otherwise, adding the DepManager plugin using
 that lockfile might install incompatible older versions onto the workers, causing errors when they
 restart.
+
+This script is run automatically via a the pytest fixture `updated_test_envs`.
 """
 
 import importlib.metadata
