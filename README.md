@@ -59,4 +59,4 @@ means.apply(foobar.optimize).compute()
 
 ## Caveats
 
-Don't actually use it. It's hacks all the way down. Just a proof of concept to see what the user experience feels like.
+This is still a proof-of-concept-level package. It's been used personally quite a bit, and proven reliable, but use at your own risk.
