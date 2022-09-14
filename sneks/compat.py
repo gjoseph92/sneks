@@ -37,7 +37,7 @@ def get_backend() -> tuple[DepManagerBase, dict[str, str]]:
     if tool == "poetry":
         plugin_type = PoetryDepManager
         current_versions_from_lockfile = current_versions_poetry
-    elif tool == "sneks":
+    elif tool == "pdm":
         plugin_type = PdmDepManager
         current_versions_from_lockfile = current_versions_pdm
     else:
