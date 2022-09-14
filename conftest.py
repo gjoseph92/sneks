@@ -11,11 +11,12 @@ def set_pip_packages(required_packages: list[str]):
     import os
 
     pip_packages = " ".join(
-        f"{pkg}=={importlib.metadata.version(pkg)}" for pkg in required_packages
+        [f"{pkg}=={importlib.metadata.version(pkg)}" for pkg in required_packages]
+        # `yapf` used in tests to verify it's removed by installation
+        + ["yapf"]
     )
     os.environ["PIP_PACKAGES"] = pip_packages
     print(f'PIP_PACKAGES="{pip_packages}"')
 
 
-# `yapf` used in tests to verify it's removed by installation
-set_pip_packages(REQUIRED_PACKAGES + ["yapf"])
+set_pip_packages(REQUIRED_PACKAGES)
