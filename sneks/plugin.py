@@ -149,8 +149,8 @@ async def write_compressed_file(data: bytes, path: Path) -> None:
 # Concrete implementations
 ##########################
 #
-# Sadly, these all have to be in the same file
-# for pickle-by-value to work. Otherwise,
+# Sadly, these all have to be in the same file for pickle-by-value to work.
+# Otherwise, they'd still reference an import from sneks for the base class.
 
 
 class PoetryDepManager(DepManagerBase):
