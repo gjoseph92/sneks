@@ -25,6 +25,14 @@ repos:
         language_version: python3
   - repo: local
     hooks:
+      - id: poetry-check
+        name: poetry check
+        description: Check that Poetry lockfile is up to date
+        entry: poetry lock --check
+        files: "^pyproject.toml$"
+        language: python
+        language_version: python3
+        pass_filenames: false
       - id: pyright
         name: pyright
         entry: poetry run pyright
