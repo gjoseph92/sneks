@@ -27,6 +27,7 @@ class DepManagerBase(NannyPlugin, ABC):
     # ^ There should only ever be one instance of this plugin on a cluster at once.
     # So we always use the same name.
     _compressed_lockfile: bytes
+    restart: ClassVar[bool] = False
 
     LOCKFILE_NAME: ClassVar[str]
     TOOL_NAME: ClassVar[str]
@@ -71,12 +72,16 @@ class DepManagerBase(NannyPlugin, ABC):
 
         await self.setup_tool(tool_path=tool_path, workdir=workdir)
 
-        self.restart = await self.install(tool_path=tool_path, workdir=workdir)
-        print(
-            "Installation complete! Restarting worker."
-            if self.restart
-            else "No dependencies to install or update"
-        )
+        restart = await self.install(tool_path=tool_path, workdir=workdir)
+        if not restart:
+            print("No dependencies to install or update")
+            return
+
+        print("Installation complete! Restarting worker.")
+        # NOTE: setting `self.restart` _should_ work, but there are probably race conditions between
+        # `Client.restart` and nannies resetarting themselves. The `Nanny.restart` method is generally
+        # not very trustworthy.
+        await nanny.kill(timeout=30)
 
     def __getstate__(self) -> dict:
         """
