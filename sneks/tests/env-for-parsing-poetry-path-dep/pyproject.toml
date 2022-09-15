@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "env-for-parsing-poetry"
+version = "0.1.0"
+description = ""
+authors = ["Gabe Joseph <gjoseph92@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+bokeh = "==2.4.3"
+sneks-sync = {path = "../../.."}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

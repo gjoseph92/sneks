@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable
+from typing import AbstractSet, Callable
 
 import tomli
 
-from sneks.constants import REQUIRED_PACKAGES
+from sneks.constants import OPTIONAL_PACKAGES, REQUIRED_PACKAGES
 from sneks.parse_pdm import current_versions_pdm
 from sneks.parse_poetry import current_versions_poetry
 from sneks.plugin import DepManagerBase, PdmDepManager, PoetryDepManager
@@ -33,7 +33,9 @@ def get_backend() -> tuple[DepManagerBase, dict[str, str]]:
 
     tool = sniff_tool_type(pyproject)
     plugin_type: type[DepManagerBase]
-    current_versions_from_lockfile: Callable[[list[str], bytes], list[str]]
+    current_versions_from_lockfile: Callable[
+        [AbstractSet[str], AbstractSet[str], bytes], list[str]
+    ]
     if tool == "poetry":
         plugin_type = PoetryDepManager
         current_versions_from_lockfile = current_versions_poetry
@@ -47,6 +49,8 @@ def get_backend() -> tuple[DepManagerBase, dict[str, str]]:
     with open(lockfile_path, "rb") as f:
         lockfile = f.read()
 
-    required_versions = current_versions_from_lockfile(REQUIRED_PACKAGES, lockfile)
+    required_versions = current_versions_from_lockfile(
+        REQUIRED_PACKAGES, OPTIONAL_PACKAGES, lockfile
+    )
     environ = {"PIP_PACKAGES": " ".join(required_versions)}
     return plugin_type(pyproject, lockfile), environ

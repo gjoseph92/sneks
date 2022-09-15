@@ -5,16 +5,17 @@ description = ""
 authors = ["Gabe Joseph <gjoseph92@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "==3.9"
+python = ">=3.9"
 bokeh = "==2.4.3"
 distributed = "==2022.5.2"
 black = "==22.3.0"
 yapf = {git = "https://github.com/google/yapf.git", rev = "v0.31.0"}
 mypy = {version = "==0.960", optional = true}
-sneks = {path = "../../.."}
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8 = "==4.0.1"
+# Path dep is okay, since it won't be installed on the cluster
+hypothesis = {path = "../../../../hypothesis/hypothesis-python"}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
