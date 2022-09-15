@@ -6,6 +6,7 @@ import sys
 import coiled
 from coiled.utils import parse_wait_for_workers
 from distributed.client import Client
+from distributed.nanny import Nanny
 from distributed.worker import get_client as get_default_client
 from rich import print
 
@@ -52,6 +53,24 @@ def get_client(**kwargs) -> Client:
         print("[stdout]", e.stdout.decode())
         print("[stderr]", e.stderr.decode())
         raise
+
+    # Hack around https://github.com/dask/distributed/issues/7035. Workers that joined while
+    # the plugin was getting registered may have missed it.
+
+    # don't want to serialize the whole plugin into the closure
+    plugin_name = plugin.name
+
+    async def restart_if_no_dep_manager(dask_worker: Nanny) -> None:
+        if plugin_name not in dask_worker.plugins:
+            msg = await dask_worker.scheduler.register_nanny()
+            for name, plugin in msg["nanny-plugins"].items():
+                await dask_worker.plugin_add(plugin=plugin, name=name)
+
+    # Sadly we have to block on this for consistency's sake.
+    # We don't want to return control to the user until we're sure there
+    # aren't any workers without the plugin.
+    client.run(restart_if_no_dep_manager, nanny=True)
+
     if n_workers := kwargs.get("n_workers"):
         # Scale to requested size, if one was given. This is different from coiled behavior,
         # but ensures a cluster will look the way you're asking for it---more declarative style.
