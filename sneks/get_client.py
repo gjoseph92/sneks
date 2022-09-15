@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from typing import Any, Callable, TypeVar, cast
 
 import coiled
 from coiled.utils import parse_wait_for_workers
@@ -10,10 +9,10 @@ from distributed.client import Client
 from distributed.nanny import Nanny
 from distributed.worker import get_client as get_default_client
 from rich import print
-from typing_extensions import ParamSpec
 
 from sneks.compat import get_backend
 from sneks.constants import PROJECT_NAME
+from sneks.wraps_args import wraps_args
 
 
 def _senv() -> str:
@@ -21,22 +20,7 @@ def _senv() -> str:
     return f"{PROJECT_NAME}-{vi.major}-{vi.minor}-{vi.micro}-full"
 
 
-P = ParamSpec("P")
-T = TypeVar("T")
-
-
-def _wraps_args(
-    wrapped: Callable[P, Any]
-) -> Callable[[Callable[..., T]], Callable[P, T]]:
-    def inner(wrapper: Callable[..., T]) -> Callable[P, T]:
-        wrapper.__annotations__ = wrapped.__annotations__
-        wrapper.__signature__ = wrapped.__signature__
-        return cast(Callable[P, T], wrapper)
-
-    return inner
-
-
-@_wraps_args(coiled.Cluster)
+@wraps_args(coiled.Cluster)
 def get_client(**kwargs) -> Client:
     """
     Launch a dask cluster in the cloud compatible with your current Poetry or PDM environment.
