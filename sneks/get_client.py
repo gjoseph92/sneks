@@ -71,7 +71,7 @@ def get_client(**kwargs) -> Client:
     async def restart_if_no_dep_manager(dask_worker: Nanny) -> None:
         if plugin_name not in dask_worker.plugins:
             msg = await dask_worker.scheduler.register_nanny()
-            for name, plugin in msg["nanny-plugins"].items():
+            for name, plugin in msg["nanny-plugins"].items():  # type: ignore
                 await dask_worker.plugin_add(plugin=plugin, name=name)
 
     # Sadly we have to block on this for consistency's sake.
@@ -82,6 +82,11 @@ def get_client(**kwargs) -> Client:
     target = parse_wait_for_workers(n_workers, wait_for_workers)
     print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
     client.wait_for_workers(target)
+
+    # HACK: make the client "own" the cluster. When the client closes, the cluster
+    # object will close too. Whether the actual Coiled cluster shuts down depends on the
+    # `shutdown_on_close` argument.
+    client._start_arg = None
     return client
 
 
