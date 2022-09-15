@@ -52,7 +52,14 @@ def get_client(**kwargs) -> Client:
         print("[stdout]", e.stdout.decode())
         print("[stderr]", e.stderr.decode())
         raise
-    target = parse_wait_for_workers(cluster._start_n_workers, wait_for_workers)
+    if n_workers := kwargs.get("n_workers"):
+        # Scale to requested size, if one was given. This is different from coiled behavior,
+        # but ensures a cluster will look the way you're asking for it---more declarative style.
+        print(f"[bold white]Scaled to {n_workers} worker(s)[/]")  # TODO improve
+        cluster.scale(n_workers)
+    else:
+        n_workers = cluster._start_n_workers
+    target = parse_wait_for_workers(n_workers, wait_for_workers)
     print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
     client.wait_for_workers(target)
     return client
