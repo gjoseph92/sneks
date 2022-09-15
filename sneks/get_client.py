@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from typing import Callable, TypeVar, cast
+from typing import Any, Callable, TypeVar, cast
 
 import coiled
 from coiled.utils import parse_wait_for_workers
@@ -25,8 +25,10 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def _wraps_args(wrapped: Callable[P, T]) -> Callable[[Callable], Callable[P, T]]:
-    def inner(wrapper: Callable) -> Callable[P, T]:
+def _wraps_args(
+    wrapped: Callable[P, Any]
+) -> Callable[[Callable[..., T]], Callable[P, T]]:
+    def inner(wrapper: Callable[..., T]) -> Callable[P, T]:
         wrapper.__annotations__ = wrapped.__annotations__
         wrapper.__signature__ = wrapped.__signature__
         return cast(Callable[P, T], wrapper)
