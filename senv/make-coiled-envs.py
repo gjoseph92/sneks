@@ -27,6 +27,8 @@ from aiodocker import Docker
 from coiled.core import Async, Cloud
 from rich import print
 
+from sneks.constants import COILED_ACCOUNT_NAME, DOCKER_USERNAME, PROJECT_NAME
+
 PY_VERSIONS = [
     "3.10.4",
     "3.10.2",
@@ -55,9 +57,6 @@ PY_VERSIONS = [
     "3.8.1",
     "3.8.0",
 ]
-
-DOCKER_USERNAME = "jabriel"
-PROJECT_NAME = "sneks"
 
 
 @contextmanager
@@ -125,7 +124,7 @@ async def make_env(
     try:
         await cloud.create_software_environment(
             name,
-            account="gjoseph92",
+            account=COILED_ACCOUNT_NAME,
             container=image,
             log_output=log,
         )
