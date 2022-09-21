@@ -46,7 +46,7 @@ def update_test_envs():
     tests = Path(__file__).parent
     versions = [
         f"{pkg}=={importlib.metadata.version(pkg)}"
-        for pkg in REQUIRED_PACKAGES
+        for pkg in list(REQUIRED_PACKAGES)
         + ["numpy", "black"]  # `black` used in tests to verify installation happened
     ]
     print(f"Using {versions}")

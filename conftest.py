@@ -19,4 +19,4 @@ def set_pip_packages(required_packages: list[str]):
     print(f'PIP_PACKAGES="{pip_packages}"')
 
 
-set_pip_packages(REQUIRED_PACKAGES)
+set_pip_packages(list(REQUIRED_PACKAGES))
