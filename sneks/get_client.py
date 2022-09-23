@@ -63,8 +63,16 @@ def get_client(**kwargs) -> Client:
     else:
         n_workers = cluster._start_n_workers
 
+    target = parse_wait_for_workers(n_workers, wait_for_workers)
+    print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
+    client.wait_for_workers(target)
+
     # Hack around https://github.com/dask/distributed/issues/7035. Workers that joined while
     # the plugin was getting registered may have missed it.
+    # We have to run this after we're sure all workers are connected.
+    # If we just do it after the plugin is registered, it's not guaranteed that a _Worker_
+    # subprocess that was starting up prior to `register_worker_plugin` has actually
+    # started and connected to the scheduler yet.
 
     # don't want to serialize the whole plugin into the closure
     plugin_name = plugin.name
@@ -89,10 +97,6 @@ def get_client(**kwargs) -> Client:
     # We don't want to return control to the user until we're sure there
     # aren't any workers without the plugin.
     client.run(restart_if_no_dep_manager, nanny=True)
-
-    target = parse_wait_for_workers(n_workers, wait_for_workers)
-    print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
-    client.wait_for_workers(target)
 
     # HACK: make the client "own" the cluster. When the client closes, the cluster
     # object will close too. Whether the actual Coiled cluster shuts down depends on the
