@@ -71,9 +71,19 @@ def get_client(**kwargs) -> Client:
 
     async def restart_if_no_dep_manager(dask_worker: Nanny) -> None:
         if plugin_name not in dask_worker.plugins:
+            print(f"{plugin_name!r} missing; fetching from scheduler...")
+
             msg = await dask_worker.scheduler.register_nanny()
-            for name, plugin in msg["nanny-plugins"].items():  # type: ignore
+
+            plugins = msg["nanny-plugins"]  # type: ignore
+            if plugin_name not in plugins:
+                raise RuntimeError(f"{plugin_name!r} not in {plugins}!")
+
+            for name, plugin in plugins.items():
+                print(f"Manually adding missing plugin {name!r}")
                 await dask_worker.plugin_add(plugin=plugin, name=name)
+        else:
+            print(f"{plugin_name!r} already registered")
 
     # Sadly we have to block on this for consistency's sake.
     # We don't want to return control to the user until we're sure there
