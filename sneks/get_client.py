@@ -4,11 +4,11 @@ import subprocess
 import sys
 
 import coiled
+import rich
 from coiled.utils import parse_wait_for_workers
 from distributed.client import Client
 from distributed.nanny import Nanny
 from distributed.worker import get_client as get_default_client
-from rich import print
 
 from sneks.compat import get_backend
 from sneks.constants import COILED_ACCOUNT_NAME, PROJECT_NAME
@@ -44,27 +44,27 @@ def get_client(**kwargs) -> Client:
         software=_senv(), environ=environ, **kwargs, wait_for_workers=False
     )
     client = Client(cluster)
-    print(
+    rich.print(
         "[bold white]Uploading lockfile and installing dependencies on running workers[/]"
     )  # TODO improve
     try:
         client.register_worker_plugin(plugin)
     except subprocess.CalledProcessError as e:
-        print("[bold red]Dependency installation failed[/]")  # TODO improve
-        print("[stdout]", e.stdout.decode())
-        print("[stderr]", e.stderr.decode())
+        rich.print("[bold red]Dependency installation failed[/]")  # TODO improve
+        rich.print("[stdout]", e.stdout.decode())
+        rich.print("[stderr]", e.stderr.decode())
         raise
 
     if n_workers := kwargs.get("n_workers"):
         # Scale to requested size, if one was given. This is different from coiled behavior,
         # but ensures a cluster will look the way you're asking for it---more declarative style.
-        print(f"[bold white]Scaled to {n_workers} worker(s)[/]")  # TODO improve
+        rich.print(f"[bold white]Scaled to {n_workers} worker(s)[/]")  # TODO improve
         cluster.scale(n_workers)
     else:
         n_workers = cluster._start_n_workers
 
     target = parse_wait_for_workers(n_workers, wait_for_workers)
-    print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
+    rich.print(f"[bold white]Waiting for {target} worker(s)[/]")  # TODO improve
     client.wait_for_workers(target)
 
     # Hack around https://github.com/dask/distributed/issues/7035. Workers that joined while
