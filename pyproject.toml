@@ -15,6 +15,9 @@ coiled = "^0.2.7"
 cloudpickle = "^2.1.0"
 tomli = "^2.0.1"
 rich = "^12.4.4"
+setuptools = ">=65.3.0"
+# ^ Coiled needs this for `pkg_resources`, which is sometimes---but not always, i.e. on GitHub---a site package.
+# We shouldn't have to put it explicitly; that's an upstream bug.
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.3.0"
