@@ -14,8 +14,6 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    env:
-      SUFFIX: -full
     strategy:
       # max-parallel: 2
       fail-fast: false
