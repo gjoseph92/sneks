@@ -25,5 +25,6 @@ RUN TARGET="$(which python)" && \
     BIN="$(dirname $TARGET)" && \
     mv "$TARGET" "$TARGET.real" && \
     mv /fake-entrypoint.sh "$TARGET" && \
+    ln -s "$TARGET" "$BIN/dask" && \
     ln -s "$TARGET" "$BIN/dask-worker" && \
     ln -s "$TARGET" "$BIN/dask-scheduler"
