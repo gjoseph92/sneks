@@ -100,6 +100,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=${{ env.IMAGE_TAG }}
+          cache-to: type=inline
+
 
       - name: Make Coiled senv
         shell: bash
