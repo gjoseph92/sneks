@@ -3,15 +3,17 @@ FROM $IMAGE
 
 RUN python3 -m pip install --upgrade pip
 
-RUN export POETRY_HOME=/opt/poetry &&\
-    python3 -m venv $POETRY_HOME &&\
+ENV PATH "/root/.local/bin:$PATH"
+ENV POETRY_HOME=/opt/poetry
+ENV PDM_HOME=/opt/pdm
+
+RUN python3 -m venv $POETRY_HOME &&\
     $POETRY_HOME/bin/pip install poetry &&\
     $POETRY_HOME/bin/poetry --version
 RUN mkdir -p ~/.local/bin &&\
     ln -s $POETRY_HOME/bin/poetry ~/.local/bin/poetry
 
-RUN export PDM_HOME=/opt/pdm &&\
-    python3 -m venv $PDM_HOME &&\
+RUN python3 -m venv $PDM_HOME &&\
     $PDM_HOME/bin/pip install pdm &&\
     $PDM_HOME/bin/pdm --version
 RUN mkdir -p ~/.local/bin &&\
