@@ -1,13 +1,14 @@
 services:
   scheduler:
     image: sneks-coiled-sim
+    # platform: linux/arm64
     build:
       context: .
       args:
-        IMAGE: python:3.9.1
+        IMAGE: python:3.9.4
         # IMAGE: coiled/default:sha-6b4e896
     environment:
-      - PIP_PACKAGES=poetry dask distributed
+      - PIP_PACKAGES=dask distributed
     command: |
       python -m distributed.cli.dask_spec --spec '{"cls": "dask.distributed.Scheduler", "opts": {"host": "0.0.0.0", "port": 8786}}'
     ports:
@@ -15,25 +16,27 @@ services:
       - "8787:8787"
   worker-1:
     image: sneks-coiled-sim
+    # platform: linux/arm64
     build:
       context: .
       args:
-        IMAGE: python:3.9.1
+        IMAGE: python:3.9.4
         # IMAGE: coiled/default:sha-6b4e896
     environment:
-      - PIP_PACKAGES=poetry dask distributed
+      - PIP_PACKAGES=dask distributed
     command: dask-worker tcp://scheduler:8786
     depends_on:
       - scheduler
   worker-2:
     image: sneks-coiled-sim
+    # platform: linux/arm64
     build:
       context: .
       args:
-        IMAGE: python:3.9.1
+        IMAGE: python:3.9.4
         # IMAGE: coiled/default:sha-6b4e896
     environment:
-      - PIP_PACKAGES=poetry dask distributed
+      - PIP_PACKAGES=dask distributed
     command: dask-worker tcp://scheduler:8786
     depends_on:
       - scheduler
