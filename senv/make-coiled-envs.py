@@ -27,7 +27,7 @@ from aiodocker import Docker
 from coiled.core import Async, Cloud
 from rich import print
 
-from sneks.constants import COILED_ACCOUNT_NAME, DOCKER_USERNAME, PROJECT_NAME
+from sneks.constants import COILED_ACCOUNT_NAME, DOCKER_USERNAME, PROJECT_NAME, SUFFIX
 
 PY_VERSIONS = [
     "3.8.0",
@@ -86,7 +86,7 @@ def tar_docker_context() -> Iterator[Path]:
 
 
 async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
-    name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}-full"
+    name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}-{SUFFIX}"
     base_image = f"python:{py_version}"
     print(f"Building image {name} from {base_image}")
     try:
