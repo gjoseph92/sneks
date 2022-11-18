@@ -77,7 +77,7 @@ jobs:
         shell: bash
         # TODO find a way to single-source this by running Python
         run: |
-          VERSION="${{ python-version }}"
+          VERSION="${{ matrix.python-version }}"
           VERSION_SLUG=${VERSION//[:.]/-}
 
           IMAGE_TAG=$DOCKER_USERNAME/$PROJECT_NAME:$VERSION$SUFFIX
@@ -95,7 +95,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: ./senv
-          build-args: "IMAGE=python:${{ python-version }}"
+          build-args: "IMAGE=python:${{ matrix.python-version }}"
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.IMAGE_TAG }}
