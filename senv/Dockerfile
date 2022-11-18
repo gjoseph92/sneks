@@ -1,6 +1,8 @@
 ARG IMAGE
 FROM $IMAGE
 
+RUN python3 -m pip install --upgrade pip
+
 RUN export POETRY_HOME=/opt/poetry &&\
     python3 -m venv $POETRY_HOME &&\
     $POETRY_HOME/bin/pip install poetry &&\
