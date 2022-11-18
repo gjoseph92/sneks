@@ -1,18 +1,20 @@
 name: docker-build
 
-on: push
-# on:
-#   # Allows you to run this workflow manually from the Actions tab
-#   workflow_dispatch:
-#   push:
-#     branches:
-#       - 'main'
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - '.github/workflows/build.yaml'
+      - 'senv/Dockerfile'
+      - 'senv/fake-entrypoint.sh'
 
 jobs:
   docker:
     runs-on: ubuntu-latest
     env:
-      # PROJECT_NAME: sneks
       SUFFIX: -full
     strategy:
       # max-parallel: 2
