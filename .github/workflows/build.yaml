@@ -10,6 +10,7 @@ on:
       - '.github/workflows/build.yaml'
       - 'senv/Dockerfile'
       - 'senv/fake-entrypoint.sh'
+      - 'sneks/constants.py'
 
 jobs:
   docker:
