@@ -11,13 +11,15 @@ from distributed.nanny import Nanny
 from distributed.worker import get_client as get_default_client
 
 from sneks.compat import get_backend
-from sneks.constants import COILED_ACCOUNT_NAME, PROJECT_NAME
+from sneks.constants import COILED_ACCOUNT_NAME, PROJECT_NAME, SUFFIX
 from sneks.wraps_args import wraps_args
 
 
 def _senv() -> str:
     vi = sys.version_info
-    return f"{COILED_ACCOUNT_NAME}/{PROJECT_NAME}-{vi.major}-{vi.minor}-{vi.micro}-full"
+    return (
+        f"{COILED_ACCOUNT_NAME}/{PROJECT_NAME}-{vi.major}-{vi.minor}-{vi.micro}{SUFFIX}"
+    )
 
 
 @wraps_args(coiled.Cluster)
