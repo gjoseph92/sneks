@@ -12,6 +12,8 @@ client = get_client()
 
 \*your local [Poetry](https://python-poetry.org/) or [PDM](https://pdm.fming.dev/latest/) environment. You must use poetry or PDM. Locking package managers are what sensible people use, and you are sensible.
 
+*Neat! Sneks also supports ARM clusters! Just pass ARM instances in `scheduler_instace_types=`, `worker_instace_types=` and cross your fingers that all your dependencies have cross-arch wheels!*
+
 ## Installation
 
 ```shell
