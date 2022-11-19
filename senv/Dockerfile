@@ -1,11 +1,20 @@
 ARG IMAGE
 FROM $IMAGE
 
+# Create a virtualenv for dask and user code to run in.
+# Poetry and especially PDM are much happier to work inside a venv,
+# it's fiddly to get them to install into system Python.
+
+ENV VIRTUAL_ENV=/root/.local/sneks-venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH "$VIRTUAL_ENV/bin:$PATH"
+# Update pip; might have installation bugs with Poetry otherwise
 RUN python3 -m pip install --upgrade pip
 
-ENV PATH "/root/.local/bin:$PATH"
+# Install Poetry and PDM in separate, isolated venvs (just like their installers do)
 ENV POETRY_HOME=/opt/poetry
 ENV PDM_HOME=/opt/pdm
+ENV PATH "/root/.local/bin:$PATH"
 
 RUN python3 -m venv $POETRY_HOME &&\
     $POETRY_HOME/bin/pip install poetry &&\
@@ -25,5 +34,6 @@ RUN TARGET="$(which python)" && \
     BIN="$(dirname $TARGET)" && \
     mv "$TARGET" "$TARGET.real" && \
     mv /fake-entrypoint.sh "$TARGET" && \
+    ln -s "$TARGET" "$BIN/dask" && \
     ln -s "$TARGET" "$BIN/dask-worker" && \
     ln -s "$TARGET" "$BIN/dask-scheduler"

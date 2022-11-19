@@ -1,5 +1,4 @@
-ARG PY_VERSION=3.9.1
-FROM jabriel/sneks:$PY_VERSION-full
+FROM sneks-test-base
 ARG PIP_PACKAGES
 
 # Pre-install the required deps for faster tests

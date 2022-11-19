@@ -1,11 +1,22 @@
 services:
+  base:
+    image: sneks-test-base
+    command: tail -f /dev/null
+    build:
+      context: ../../senv
+      args:
+        IMAGE: "python:${PY_VERSION}"
+
   scheduler:
     image: sneks-test
+    depends_on:
+      - base
     build:
       context: .
       args:
         PIP_PACKAGES: "${PIP_PACKAGES}"
-    command: dask-scheduler
+    command: |
+      python -m distributed.cli.dask_spec --spec '{"cls": "dask.distributed.Scheduler", "opts": {"host": "0.0.0.0", "port": 8786}}'
     ports:
       - "8786:8786"
       - "8787:8787"
