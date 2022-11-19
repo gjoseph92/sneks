@@ -3,9 +3,9 @@ FROM $IMAGE
 
 RUN python3 -m pip install --upgrade pip
 
-ENV PATH "/root/.local/bin:$PATH"
 ENV POETRY_HOME=/opt/poetry
 ENV PDM_HOME=/opt/pdm
+ENV PATH "/root/.local/bin:$PATH"
 
 RUN python3 -m venv $POETRY_HOME &&\
     $POETRY_HOME/bin/pip install poetry &&\
@@ -18,6 +18,10 @@ RUN python3 -m venv $PDM_HOME &&\
     $PDM_HOME/bin/pdm --version
 RUN mkdir -p ~/.local/bin &&\
     ln -s $PDM_HOME/bin/pdm ~/.local/bin/pdm
+
+ENV VIRTUAL_ENV=/root/.local/sneks-venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH "$VIRTUAL_ENV/bin:$PATH"
 
 COPY fake-entrypoint.sh /fake-entrypoint.sh
 
