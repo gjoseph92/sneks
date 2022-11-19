@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import os
 import subprocess
@@ -73,6 +74,9 @@ class TestPickle:
         assert "ModuleNotFoundError" in proc.stderr
 
 
+# NOTE: see conftest.py for how we set env vars to inject into the docker-compose build process
+
+
 @pytest.fixture(scope="session")
 def updated_test_envs():
     "Ensure the versions in ``env-for-running-*`` match what's installed locally."
@@ -81,11 +85,23 @@ def updated_test_envs():
 
 @pytest.mark.parametrize("plugin_type", [PoetryDepManager, PdmDepManager])
 def test_plugin(updated_test_envs, function_scoped_container_getter, plugin_type):
-    time.sleep(1)  # FIXME stream is closed during handshake without this, wtf??
     network_info = function_scoped_container_getter.get("scheduler").network_info[0]
-    with Client(
-        f"tcp://{network_info.hostname}:{network_info.host_port}", set_as_default=False
-    ) as client:
+    addr = f"tcp://{network_info.hostname}:{network_info.host_port}"
+
+    # Wait for scheduler to actually start. idk why client retries don't work here.
+    start = time.monotonic()
+    while time.monotonic() - start < 10:
+        try:
+            client = Client(addr, set_as_default=False)
+        except (OSError, asyncio.TimeoutError):
+            print("did not respond")
+            time.sleep(1)
+        else:
+            break
+    else:
+        pytest.fail("Could not connect in 10s")
+
+    with client:
 
         def can_import(module: str):
             importlib.import_module(module)
