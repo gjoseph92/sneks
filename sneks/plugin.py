@@ -197,7 +197,6 @@ class PdmDepManager(DepManagerBase):
             tool_path,
             "info",
             cwd=workdir,
-            env=dict(VIRTUAL_ENV=str(Path(sys.executable).parent.parent.absolute())),
         )
         out, err = await self.run(
             tool_path,
@@ -207,9 +206,6 @@ class PdmDepManager(DepManagerBase):
             "--no-self",
             "--no-isolation",
             cwd=workdir,
-            # HACK: trick PDM into thinking it's running in a virtualenv so it installs
-            # into system python
-            env=dict(VIRTUAL_ENV=str(Path(sys.executable).parent.parent.absolute())),
         )
         # HACK we can do better than this text parsing to decide
         # whether to restart or not
