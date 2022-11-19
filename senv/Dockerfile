@@ -1,8 +1,17 @@
 ARG IMAGE
 FROM $IMAGE
 
+# Create a virtualenv for dask and user code to run in.
+# Poetry and especially PDM are much happier to work inside a venv,
+# it's fiddly to get them to install into system Python.
+
+ENV VIRTUAL_ENV=/root/.local/sneks-venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH "$VIRTUAL_ENV/bin:$PATH"
+# Update pip; might have installation bugs with Poetry otherwise
 RUN python3 -m pip install --upgrade pip
 
+# Install Poetry and PDM in separate, isolated venvs (just like their installers do)
 ENV POETRY_HOME=/opt/poetry
 ENV PDM_HOME=/opt/pdm
 ENV PATH "/root/.local/bin:$PATH"
@@ -18,10 +27,6 @@ RUN python3 -m venv $PDM_HOME &&\
     $PDM_HOME/bin/pdm --version
 RUN mkdir -p ~/.local/bin &&\
     ln -s $PDM_HOME/bin/pdm ~/.local/bin/pdm
-
-ENV VIRTUAL_ENV=/root/.local/sneks-venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH "$VIRTUAL_ENV/bin:$PATH"
 
 COPY fake-entrypoint.sh /fake-entrypoint.sh
 
