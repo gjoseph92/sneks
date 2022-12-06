@@ -135,7 +135,7 @@ summary = "MessagePack serializer"
 
 [[package]]
 name = "mypy-extensions"
-version = "0.4.2"
+version = "0.4.3"
 summary = "Experimental type system extensions for programs checked with the mypy typechecker."
 
 [[package]]
@@ -283,7 +283,7 @@ dependencies = [
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:3f18aa6e6e748c48a4fdca9f19d425b9fc96ffff207a1c6bf72b4286d3c1193d"
+content_hash = "sha256:bd35aa3b38f7f217e71db5651636b1c5722204e4a945a9447b0949706d2bf738"
 
 [metadata.files]
 "black 22.10.0" = [
@@ -516,9 +516,9 @@ content_hash = "sha256:3f18aa6e6e748c48a4fdca9f19d425b9fc96ffff207a1c6bf72b4286d
     {url = "https://files.pythonhosted.org/packages/ef/3f/f20ed47d3a356a556edbd8f9d0515a5a111ffde1e24213a64da948d823a2/msgpack-1.0.4-cp310-cp310-win_amd64.whl", hash = "sha256:4dea20515f660aa6b7e964433b1808d098dcfcabbebeaaad240d11f909298075"},
     {url = "https://files.pythonhosted.org/packages/f4/f8/225ca22971690c8b530a2f5344e8cf4d13d601c3817eded87ecbb3e644b8/msgpack-1.0.4-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:545e3cf0cf74f3e48b470f68ed19551ae6f9722814ea969305794645da091236"},
 ]
-"mypy-extensions 0.4.2" = [
-    {url = "https://files.pythonhosted.org/packages/1e/2f/7bba47eb58f62a473387cd7658dedd0bedb4b0fa9d530bbbfa0a6d23034a/mypy_extensions-0.4.2.tar.gz", hash = "sha256:a161e3b917053de87dbe469987e173e49fb454eca10ef28b48b384538cc11458"},
-    {url = "https://files.pythonhosted.org/packages/55/aa/2df16f9c6215b10c472fd7564b5f2c5644c13ab9c26d83b1c9373c11d97d/mypy_extensions-0.4.2-py2.py3-none-any.whl", hash = "sha256:c77e34350c01523cd63b6dc30b36515107b2c3cbacc8392d51d33ea18d59f8f1"},
+"mypy-extensions 0.4.3" = [
+    {url = "https://files.pythonhosted.org/packages/5c/eb/975c7c080f3223a5cdaff09612f3a5221e4ba534f7039db34c35d95fa6a5/mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
+    {url = "https://files.pythonhosted.org/packages/63/60/0582ce2eaced55f65a4406fc97beba256de4b7a95a0034c6576458c6519f/mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
 ]
 "numpy 1.23.4" = [
     {url = "https://files.pythonhosted.org/packages/04/d4/12493d1ed7d6bd5a29016eea021a32011aef266d23a9a4fdefd5ad520eed/numpy-1.23.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ce03305dd694c4873b9429274fd41fc7eb4e0e4dea07e0af97a933b079a5814f"},

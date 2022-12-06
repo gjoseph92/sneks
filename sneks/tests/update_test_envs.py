@@ -13,6 +13,7 @@ import importlib.metadata
 import subprocess
 from pathlib import Path
 
+import tomli
 from rich import print
 
 from sneks.constants import REQUIRED_PACKAGES
@@ -31,7 +32,14 @@ def update_poetry_env(env: Path, versions: list[str]) -> None:
     )
 
 
-def update_pdm_env(env: Path, versions: list[str], overrides: dict[str, str]) -> None:
+PIP_OVERRIDES = {
+    # Override a transitive dependency of `black`:
+    # https://github.com/psf/black/blob/d4a85643a465f5fae2113d07d22d021d4af4795a/pyproject.toml#L67
+    "mypy_extensions": "0.4.2"
+}
+
+
+def update_pdm_env(env: Path, versions: list[str]) -> None:
     env.mkdir(exist_ok=True)
     if not (env / "pyproject.toml").exists():
         subprocess.run(["pdm", "init", "-n"], shell=False, check=True, cwd=env)
@@ -43,17 +51,27 @@ def update_pdm_env(env: Path, versions: list[str], overrides: dict[str, str]) ->
         cwd=env,
     )
 
-    with open(env / "pyproject.toml", "a") as f:
-        f.write("\n[tool.pdm.overrides]\n")
-        for k, v in overrides.items():
-            f.write(f'{k} = "{v}"\n')
+    with open(env / "pyproject.toml", "rb") as f:
+        pyproject = tomli.load(f)
 
-    subprocess.run(
-        ["pdm", "lock"],
-        shell=False,
-        check=True,
-        cwd=env,
-    )
+    if (overrides := pyproject["tool"]["pdm"].get("overrides")) is not None:
+        assert (
+            overrides == PIP_OVERRIDES
+        ), "Overrides in pyproject.toml are out of date. Delete the PDM environment and let it be re-created."
+    else:
+        print("[bold]Adding PDM overrides[/]")
+
+        with open(env / "pyproject.toml", "a") as f:
+            f.write("\n[tool.pdm.overrides]\n")
+            for k, v in PIP_OVERRIDES.items():
+                f.write(f'{k} = "{v}"\n')
+
+            subprocess.run(
+                ["pdm", "lock"],
+                shell=False,
+                check=True,
+                cwd=env,
+            )
 
 
 def update_test_envs():
@@ -67,15 +85,7 @@ def update_test_envs():
     print("[bold][white]Setting up Poetry env[/]")
     update_poetry_env(tests / "env-for-running-poetry", versions)
     print("[bold][white]Setting up PDM env[/]")
-    update_pdm_env(
-        tests / "env-for-running-pdm",
-        versions,
-        overrides={
-            # Override a transitive dependency of `black`:
-            # https://github.com/psf/black/blob/d4a85643a465f5fae2113d07d22d021d4af4795a/pyproject.toml#L67
-            "mypy_extensions": "0.4.2"
-        },
-    )
+    update_pdm_env(tests / "env-for-running-pdm", versions)
 
 
 if __name__ == "__main__":

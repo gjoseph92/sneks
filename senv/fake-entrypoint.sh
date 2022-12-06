@@ -12,9 +12,13 @@ mv $PYTHON.real $PYTHON
 
 python -m pip install $PIP_PACKAGES
 
-if test -v PIP_OVERRIDES; then
+echo "$PIP_OVERRIDES"
+
+if [ -z "$PIP_OVERRIDES" ]; then
+    echo "No pip overrides to install"
+else
     echo "Installing overrides: $PIP_OVERRIDES"
-    for ARG in ${OVERRIDES}; do
+    for ARG in ${PIP_OVERRIDES}; do
         python -m pip install "$ARG"
     done
 fi
