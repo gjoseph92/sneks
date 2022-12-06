@@ -69,4 +69,7 @@ def current_versions_pdm(
             f"Run `pdm add {' '.join(missing)}` to install them."
         )
 
+    assert not any(
+        " " in o for o in overrides
+    ), f"Overrides will fail; `sh` does not support arrays containing spaces: {overrides}"
     return pip_args, pip_overrides
