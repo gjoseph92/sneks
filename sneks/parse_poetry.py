@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import AbstractSet
-
-import tomli
+from typing import AbstractSet, Any
 
 
 def current_versions_poetry(
-    required: AbstractSet[str], optional: AbstractSet[str], lockfile: bytes
-) -> list[str]:
+    required: AbstractSet[str],
+    optional: AbstractSet[str],
+    lockfile: dict[str, Any],
+    pyproject: dict[str, Any],
+) -> tuple[list[str], list[str]]:
     """
     Determine what versions of required and optional packages are installed by parsing the lockfile
 
@@ -15,11 +16,9 @@ def current_versions_poetry(
 
     Also validates that all dependencies in the lockfile will be installable on the cluster (no path deps, for example).
     """
-    lock = tomli.loads(lockfile.decode())
-
     missing = set(required)
     pip_args: list[str] = []
-    for pkg in lock["package"]:
+    for pkg in lockfile["package"]:
         name = pkg["name"]
 
         try:
@@ -53,7 +52,7 @@ def current_versions_poetry(
             continue
 
         # Reached here - package will be installed on cluster.
-        # Validate that we'll be able to install it, and ge the pip install arg if necessary.
+        # Validate that we'll be able to install it, and get the pip install arg if necessary.
 
         if source := pkg.get("source"):
             if (stype := source["type"]) != "git":
@@ -88,4 +87,4 @@ def current_versions_poetry(
             f"Run `poetry add {' '.join(missing)}` to install them."
         )
 
-    return pip_args
+    return pip_args, []
