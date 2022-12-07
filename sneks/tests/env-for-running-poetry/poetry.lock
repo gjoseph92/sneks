@@ -444,8 +444,8 @@ heapdict = "*"
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.9"
-content-hash = "1d623f1d900d02ff1f3e2d641a64a1056297351c6808b04f7ae3f92eb010e42d"
+python-versions = ">=3.9"
+content-hash = "f41c8cb525cffd187224e881c7903439015b8a565618c54be45b30b96f2c3267"
 
 [metadata.files]
 black = [

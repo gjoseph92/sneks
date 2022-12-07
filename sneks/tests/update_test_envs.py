@@ -11,6 +11,7 @@ This script is run automatically via a the pytest fixture `updated_test_envs`.
 
 import importlib.metadata
 import subprocess
+import sys
 from pathlib import Path
 
 import tomli
@@ -18,11 +19,18 @@ from rich import print
 
 from sneks.constants import REQUIRED_PACKAGES
 
+PY_VERSION_REQ = f"{sys.version_info.major}.{sys.version_info.minor}"
+
 
 def update_poetry_env(env: Path, versions: list[str]) -> None:
     env.mkdir(exist_ok=True)
     if not (env / "pyproject.toml").exists():
-        subprocess.run(["poetry", "init", "-n"], shell=False, check=True, cwd=env)
+        subprocess.run(
+            ["poetry", "init", "-n", "--python", PY_VERSION_REQ],
+            shell=False,
+            check=True,
+            cwd=env,
+        )
     subprocess.run(
         # --lock prevents actually installing them; just does lock
         ["poetry", "add", "--lock"] + versions,
@@ -42,7 +50,12 @@ PIP_OVERRIDES = {
 def update_pdm_env(env: Path, versions: list[str]) -> None:
     env.mkdir(exist_ok=True)
     if not (env / "pyproject.toml").exists():
-        subprocess.run(["pdm", "init", "-n"], shell=False, check=True, cwd=env)
+        subprocess.run(
+            ["pdm", "init", "-n", "--python", PY_VERSION_REQ],
+            shell=False,
+            check=True,
+            cwd=env,
+        )
     subprocess.run(
         # --no-sync prevents actually installing them; just does lock
         ["pdm", "add", "--no-sync"] + versions,
