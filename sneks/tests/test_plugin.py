@@ -1,5 +1,5 @@
 import asyncio
-import importlib
+import importlib.metadata
 import os
 import subprocess
 import sys
@@ -14,7 +14,7 @@ from distributed.protocol.pickle import dumps
 
 from sneks.plugin import PdmDepManager, PoetryDepManager
 
-from .update_test_envs import update_test_envs
+from .update_test_envs import PIP_OVERRIDES, update_test_envs
 
 pytest_plugins = ["docker_compose"]
 
@@ -103,15 +103,19 @@ def test_plugin(updated_test_envs, function_scoped_container_getter, plugin_type
 
     with client:
 
-        def can_import(module: str):
-            importlib.import_module(module)
-            return True
+        def version_of(module: str) -> str:
+            return importlib.metadata.version(module)
 
         # See `conftest.py` for where `yapf` gets added to docker image
-        assert client.submit(can_import, "yapf", pure=False).result(timeout=5) is True
+        assert client.submit(version_of, "yapf", pure=False).result(timeout=5)
 
-        with pytest.raises(ImportError):
-            print(client.submit(can_import, "black").result())
+        for pkg, version in PIP_OVERRIDES.items():
+            assert (
+                client.submit(version_of, pkg, pure=False).result(timeout=5) == version
+            )
+
+        with pytest.raises(importlib.metadata.PackageNotFoundError):
+            print(client.submit(version_of, "black").result())
 
         root = (
             Path(__file__).parent / f"env-for-running-{plugin_type.TOOL_NAME.lower()}"
@@ -131,10 +135,12 @@ def test_plugin(updated_test_envs, function_scoped_container_getter, plugin_type
             raise
 
         # See `update_test_envs.py` for where `black` gets added to poetry reqs
-        assert client.submit(can_import, "black", pure=False).result(timeout=5) is True
+        assert client.submit(version_of, "black", pure=False).result(
+            timeout=5
+        ) == version_of("black")
 
-        with pytest.raises(ImportError):
-            print(client.submit(can_import, "yapf").result())
+        with pytest.raises(importlib.metadata.PackageNotFoundError):
+            print(client.submit(version_of, "yapf").result())
 
         # Workers were restarted
         assert client.run(os.getpid) != pids

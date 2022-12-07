@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import AbstractSet
-
-import tomli
+from typing import AbstractSet, Any
 
 
 def current_versions_pdm(
-    required: AbstractSet[str], optional: AbstractSet[str], lockfile: bytes
-) -> list[str]:
+    required: AbstractSet[str],
+    optional: AbstractSet[str],
+    lockfile: dict[str, Any],
+    pyproject: dict[str, Any],
+) -> tuple[list[str], list[str]]:
     """
     Determine what versions of required and optional packages are installed by parsing the lockfile
 
@@ -15,11 +16,16 @@ def current_versions_pdm(
 
     Also validates that all dependencies in the lockfile will be installable on the cluster (no path deps, for example).
     """
-    lock = tomli.loads(lockfile.decode())
+    overrides: dict[str, str]
+    try:
+        overrides = pyproject["tool"]["pdm"]["overrides"]
+    except KeyError:
+        overrides = {}
 
     missing = set(required)
     pip_args: list[str] = []
-    for pkg in lock["package"]:
+    pip_overrides: list[str] = []
+    for pkg in lockfile["package"]:
         name = pkg["name"]
 
         try:
@@ -53,7 +59,7 @@ def current_versions_pdm(
         else:
             pip_arg = f"{name}=={pkg['version']}"
 
-        pip_args.append(pip_arg)
+        (pip_overrides if name in overrides else pip_args).append(pip_arg)
 
     if missing:
         missing = sorted(missing)
@@ -63,4 +69,7 @@ def current_versions_pdm(
             f"Run `pdm add {' '.join(missing)}` to install them."
         )
 
-    return pip_args
+    assert not any(
+        " " in o for o in overrides
+    ), f"Overrides will fail; `sh` does not support arrays containing spaces: {overrides}"
+    return pip_args, pip_overrides
