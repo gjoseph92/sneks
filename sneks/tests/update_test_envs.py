@@ -10,11 +10,11 @@ This script is run automatically via a the pytest fixture `updated_test_envs`.
 """
 
 import importlib.metadata
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-import tomli
 from rich import print
 
 from sneks.constants import REQUIRED_PACKAGES
@@ -23,14 +23,15 @@ PY_VERSION_REQ = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
 def update_poetry_env(env: Path, versions: list[str]) -> None:
-    env.mkdir(exist_ok=True)
-    if not (env / "pyproject.toml").exists():
-        subprocess.run(
-            ["poetry", "init", "-n", "--python", PY_VERSION_REQ],
-            shell=False,
-            check=True,
-            cwd=env,
-        )
+    if env.exists():
+        shutil.rmtree(env)
+    env.mkdir()
+    subprocess.run(
+        ["poetry", "init", "-n", "--python", ">=" + PY_VERSION_REQ],
+        shell=False,
+        check=True,
+        cwd=env,
+    )
     subprocess.run(
         # --lock prevents actually installing them; just does lock
         ["poetry", "add", "--lock"] + versions,
@@ -48,14 +49,15 @@ PIP_OVERRIDES = {
 
 
 def update_pdm_env(env: Path, versions: list[str]) -> None:
-    env.mkdir(exist_ok=True)
-    if not (env / "pyproject.toml").exists():
-        subprocess.run(
-            ["pdm", "init", "-n", "--python", PY_VERSION_REQ],
-            shell=False,
-            check=True,
-            cwd=env,
-        )
+    if env.exists():
+        shutil.rmtree(env)
+    env.mkdir()
+    subprocess.run(
+        ["pdm", "init", "-n", "--python", PY_VERSION_REQ],
+        shell=False,
+        check=True,
+        cwd=env,
+    )
     subprocess.run(
         # --no-sync prevents actually installing them; just does lock
         ["pdm", "add", "--no-sync"] + versions,
@@ -64,27 +66,19 @@ def update_pdm_env(env: Path, versions: list[str]) -> None:
         cwd=env,
     )
 
-    with open(env / "pyproject.toml", "rb") as f:
-        pyproject = tomli.load(f)
+    print("[bold]Adding PDM overrides[/]")
 
-    if (overrides := pyproject["tool"]["pdm"].get("overrides")) is not None:
-        assert (
-            overrides == PIP_OVERRIDES
-        ), "Overrides in pyproject.toml are out of date. Delete the PDM environment and let it be re-created."
-    else:
-        print("[bold]Adding PDM overrides[/]")
+    with open(env / "pyproject.toml", "a") as f:
+        f.write("\n[tool.pdm.overrides]\n")
+        for k, v in PIP_OVERRIDES.items():
+            f.write(f'{k} = "{v}"\n')
 
-        with open(env / "pyproject.toml", "a") as f:
-            f.write("\n[tool.pdm.overrides]\n")
-            for k, v in PIP_OVERRIDES.items():
-                f.write(f'{k} = "{v}"\n')
-
-            subprocess.run(
-                ["pdm", "lock"],
-                shell=False,
-                check=True,
-                cwd=env,
-            )
+    subprocess.run(
+        ["pdm", "lock"],
+        shell=False,
+        check=True,
+        cwd=env,
+    )
 
 
 def update_test_envs():
