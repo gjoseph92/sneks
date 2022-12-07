@@ -19,7 +19,7 @@ if [ -z "$PIP_OVERRIDES" ]; then
 else
     echo "Installing overrides: $PIP_OVERRIDES"
     for ARG in ${PIP_OVERRIDES}; do
-        python -m pip install "$ARG"
+        python -m pip install --no-deps "$ARG"
     done
 fi
 
