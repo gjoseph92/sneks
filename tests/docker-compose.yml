@@ -3,7 +3,7 @@ services:
     image: sneks-test-base
     # command: tail -f /dev/null
     build:
-      context: ../../senv
+      context: ../senv
       args:
         IMAGE: "python:${PY_VERSION}"
 

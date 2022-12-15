@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sneks.constants import REQUIRED_PACKAGES
-from sneks.tests.update_test_envs import PIP_OVERRIDES
+from tests.update_test_envs import PIP_OVERRIDES
 
 # Set PIP_PACKAGES, PIP_OVERRIDES, and PY_VERSION env vars for docker compose to pick
 # up, ensuring versions installed in docker match versions installed locally

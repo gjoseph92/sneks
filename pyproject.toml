@@ -41,4 +41,4 @@ line_length = 88
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--docker-compose=sneks/tests/docker-compose.yml --docker-compose-remove-volumes"
+addopts = "--docker-compose=tests/docker-compose.yml --docker-compose-remove-volumes"
