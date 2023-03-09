@@ -18,7 +18,7 @@ rich = "^12.4.4"
 setuptools = ">=65.3.0"
 # ^ Coiled needs this for `pkg_resources`, which is sometimes---but not always, i.e. on GitHub---a site package.
 # We shouldn't have to put it explicitly; that's an upstream bug.
-bokeh = "^3.0.3"
+bokeh = ">=2.4.2,<3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.3.0"
