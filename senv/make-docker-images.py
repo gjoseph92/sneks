@@ -1,21 +1,21 @@
 """
-Build lots of Docker images and Coiled software environments for every version of Python.
+DEPRECATED. Do not use?
+
+Used to use this locally to build Docker images. Now they're built automatically
+in GitHub Actions. GHA also does cross-arch (ARM and x86) builds, which this script
+doesn't do.
+
+Build lots of Docker images for every version of Python.
 
 These are sadly heavy---they're the full Python docker images, so we have things you'd expect
 like git and a builtin CA bundle. We then install Poetry and a tiny script. When the image
 launches, it installs more pip packages (dask, distributed, bokeh)
 via an environment variable, then runs the dask command requested.
-
-This script builds the images locally,
-
-TODO though public, can these actually be run by other v2 users?
-Since the images are hosted on dockerhub, I'm hoping so, though I'm worried about ratelimiting.
 """
 
 from __future__ import annotations
 
 import asyncio
-import io
 import os
 import tarfile
 import traceback
@@ -24,10 +24,9 @@ from pathlib import Path
 from typing import Iterator
 
 from aiodocker import Docker
-from coiled.core import Async, Cloud
 from rich import print
 
-from sneks.constants import COILED_ACCOUNT_NAME, DOCKER_USERNAME, PROJECT_NAME, SUFFIX
+from sneks.constants import DOCKER_IMAGE_PATTERN
 
 PY_VERSIONS = [
     "3.8.0",
@@ -67,6 +66,9 @@ PY_VERSIONS = [
     "3.10.5",
     "3.10.6",
     "3.10.7",
+    "3.10.8",
+    "3.10.9",
+    "3.10.10",
 ]
 
 
@@ -86,9 +88,10 @@ def tar_docker_context() -> Iterator[Path]:
 
 
 async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
-    name = f"{DOCKER_USERNAME}/{PROJECT_NAME}:{py_version}-{SUFFIX}"
+    major, minor, micro = py_version.split(".")
+    name = DOCKER_IMAGE_PATTERN.format(major=major, minor=minor, micro=micro)
     base_image = f"python:{py_version}"
-    print(f"Building image {name} from {base_image}")
+    print(f"Building image {name!r} from {base_image!r}")
     try:
         with tarpath.open("rb") as f:
             await docker.images.build(
@@ -125,68 +128,29 @@ async def make_image(docker: Docker, tarpath: Path, py_version: str) -> str:
     return name
 
 
-async def make_env(
-    cloud: Cloud[Async],
-    image: str,
-) -> str:
-    name = image.split("/")[1].replace(":", "-").replace(".", "-")
-    print(f"Building senv {name}")
-    log = io.StringIO()
-    try:
-        await cloud.create_software_environment(
-            name,
-            account=COILED_ACCOUNT_NAME,
-            container=image,
-            log_output=log,
-        )
-    except Exception as exc:
-        print(f"[bold red]Error building {name}[/]: {exc}")
-        print(log.getvalue())
-        raise
-
-    print(f"[bold green]Senv {name} succeeded!")
-    return name
-
-
 async def make_envs(
-    cloud: Cloud[Async],
     docker: Docker,
     tarpath: Path,
     versions: list[str],
-    *,
-    coiled_concurrency: int = 6,
 ) -> None:
     docker_builds: asyncio.Queue[str] = asyncio.Queue()
-    senv_creates: asyncio.Queue[str] = asyncio.Queue()
 
     async def _docker():
         while True:
             version = await docker_builds.get()
             try:
-                image = await make_image(docker, tarpath, version)
-                await senv_creates.put(image)
+                await make_image(docker, tarpath, version)
             except Exception:
                 pass
             finally:
                 docker_builds.task_done()
 
-    async def _senv():
-        while True:
-            image = await senv_creates.get()
-            try:
-                await make_env(cloud, image)
-            except Exception:
-                pass
-            finally:
-                senv_creates.task_done()
-
     tasks = [asyncio.create_task(_docker()) for _ in range(os.cpu_count() or 2)]
-    tasks += [asyncio.create_task(_senv()) for _ in range(coiled_concurrency)]
 
     for v in versions:
         docker_builds.put_nowait(v)
 
-    await asyncio.gather(docker_builds.join(), senv_creates.join())
+    await docker_builds.join()
     for t in tasks:
         t.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
@@ -194,8 +158,8 @@ async def make_envs(
 
 async def main():
     with tar_docker_context() as tarpath:
-        async with Cloud(asynchronous=True) as cloud, Docker() as docker:
-            await make_envs(cloud, docker, tarpath, PY_VERSIONS)
+        async with Docker() as docker:
+            await make_envs(docker, tarpath, PY_VERSIONS)
 
 
 if __name__ == "__main__":

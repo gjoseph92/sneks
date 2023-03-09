@@ -10,6 +10,7 @@ on:
       - '.github/workflows/build.yaml'
       - 'senv/Dockerfile'
       - 'senv/fake-entrypoint.sh'
+      - 'senv/make-coiled-envs.py'
       - 'sneks/constants.py'
 
 jobs:
@@ -64,6 +65,7 @@ jobs:
             "3.10.7",
             "3.10.8",
             "3.10.9",
+            "3.10.10",
           ]
     steps:
       - uses: actions/checkout@v3
@@ -74,21 +76,6 @@ jobs:
           pwd
           ls -al
           python sneks/constants.py >> "$GITHUB_ENV"
-      - name: Set tag
-        shell: bash
-        # TODO find a way to single-source this by running Python
-        run: |
-          VERSION="${{ matrix.python-version }}"
-          VERSION_SLUG=${VERSION//[:.]/-}
-
-          IMAGE_TAG=$DOCKER_USERNAME/$PROJECT_NAME:$VERSION$SUFFIX
-          SENV=$PROJECT_NAME-$VERSION_SLUG$SUFFIX
-
-          echo "IMAGE_TAG=$IMAGE_TAG" | tee -a "$GITHUB_ENV"
-          echo "SENV=$SENV" | tee -a "$GITHUB_ENV"
-
-      - name: Install coiled
-        run: pipx install coiled
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -106,13 +93,6 @@ jobs:
           build-args: "IMAGE=python:${{ matrix.python-version }}"
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.IMAGE_TAG }}
-          cache-from: type=registry,ref=${{ env.IMAGE_TAG }}
+          tags: ${{ env.DOCKER_IMAGE }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}
           cache-to: type=inline
-
-
-      - name: Make Coiled senv
-        shell: bash
-        env:
-          DASK_COILED__TOKEN: ${{ secrets.COILED_TOKEN }}
-        run: coiled env create --name "$SENV" --container "$IMAGE_TAG" --account "$COILED_ACCOUNT_NAME"

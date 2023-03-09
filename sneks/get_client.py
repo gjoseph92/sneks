@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 
 import coiled
 import rich
@@ -11,15 +10,28 @@ from distributed.nanny import Nanny
 from distributed.worker import get_client as get_default_client
 
 from sneks.compat import get_backend
-from sneks.constants import COILED_ACCOUNT_NAME, PROJECT_NAME, SUFFIX
+from sneks.constants import DOCKER_IMAGE, SENV_NAME
 from sneks.wraps_args import wraps_args
 
 
-def _senv() -> str:
-    vi = sys.version_info
-    return (
-        f"{COILED_ACCOUNT_NAME}/{PROJECT_NAME}-{vi.major}-{vi.minor}-{vi.micro}{SUFFIX}"
+def _senv(account: str | None) -> str:
+    """
+    Make a Coiled container-only senv wrapping the Docker image.
+
+    With the new senvs backend, cross-account senvs are no longer allowed, even
+    container-only. Sadly, this means every sneks user has to create a separate sneks
+    senv in their own account, pointing to the same image.
+
+    Just re-creating the image every time is probably faster than checking if it exists.
+
+    When ``Cluster`` gets an ``image=`` kwarg, we can do away with this silliness.
+    """
+    coiled.create_software_environment(
+        name=SENV_NAME,
+        container=DOCKER_IMAGE,
+        account=account,
     )
+    return SENV_NAME
 
 
 @wraps_args(coiled.Cluster)
@@ -43,7 +55,10 @@ def get_client(**kwargs) -> Client:
     environ.update(new_env)
 
     cluster = coiled.Cluster(
-        software=_senv(), environ=environ, **kwargs, wait_for_workers=False
+        software=_senv(kwargs.get("account")),
+        environ=environ,
+        **kwargs,
+        wait_for_workers=False,
     )
     client = Client(cluster)
     rich.print(

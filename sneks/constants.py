@@ -1,7 +1,19 @@
-COILED_ACCOUNT_NAME = "gjoseph92"
+from sys import version_info as vi
+
 DOCKER_USERNAME = "jabriel"
 PROJECT_NAME = "sneks"
 SUFFIX = "-full-xarch"
+DOCKER_IMAGE_PATTERN = (
+    f"{DOCKER_USERNAME}/{PROJECT_NAME}:{{major}}.{{minor}}.{{micro}}{SUFFIX}"
+)
+SENV_NAME_PATTERN = f"{PROJECT_NAME}-{{major}}-{{minor}}-{{micro}}{SUFFIX}"
+
+DOCKER_IMAGE = DOCKER_IMAGE_PATTERN.format(
+    major=vi.major, minor=vi.minor, micro=vi.micro
+)
+SENV_NAME = SENV_NAME_PATTERN.format(major=vi.major, minor=vi.minor, micro=vi.micro)
+del vi
+
 REQUIRED_PACKAGES = frozenset(
     ["dask", "distributed", "bokeh", "cloudpickle", "msgpack"]
 )
