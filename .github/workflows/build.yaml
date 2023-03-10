@@ -75,7 +75,7 @@ jobs:
         run: |
           pwd
           ls -al
-          python sneks/constants.py >> "$GITHUB_ENV"
+          python sneks/constants.py ${{ matrix.python-version }} | tee -a "$GITHUB_ENV"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx

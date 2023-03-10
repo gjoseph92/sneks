@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 
 import coiled
 import rich
@@ -10,7 +11,7 @@ from distributed.nanny import Nanny
 from distributed.worker import get_client as get_default_client
 
 from sneks.compat import get_backend
-from sneks.constants import DOCKER_IMAGE, SENV_NAME
+from sneks.constants import DOCKER_IMAGE_PATTERN, SENV_NAME_PATTERN
 from sneks.wraps_args import wraps_args
 
 
@@ -26,12 +27,16 @@ def _senv(account: str | None) -> str:
 
     When ``Cluster`` gets an ``image=`` kwarg, we can do away with this silliness.
     """
+    vi = sys.version_info
+    senv = SENV_NAME_PATTERN.format(major=vi.major, minor=vi.minor, micro=vi.micro)
     coiled.create_software_environment(
-        name=SENV_NAME,
-        container=DOCKER_IMAGE,
+        name=senv,
+        container=DOCKER_IMAGE_PATTERN.format(
+            major=vi.major, minor=vi.minor, micro=vi.micro
+        ),
         account=account,
     )
-    return SENV_NAME
+    return senv
 
 
 @wraps_args(coiled.Cluster)

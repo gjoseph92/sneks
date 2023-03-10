@@ -1,5 +1,3 @@
-from sys import version_info as vi
-
 DOCKER_USERNAME = "jabriel"
 PROJECT_NAME = "sneks"
 SUFFIX = "-full-xarch"
@@ -7,12 +5,6 @@ DOCKER_IMAGE_PATTERN = (
     f"{DOCKER_USERNAME}/{PROJECT_NAME}:{{major}}.{{minor}}.{{micro}}{SUFFIX}"
 )
 SENV_NAME_PATTERN = f"{PROJECT_NAME}-{{major}}-{{minor}}-{{micro}}{SUFFIX}"
-
-DOCKER_IMAGE = DOCKER_IMAGE_PATTERN.format(
-    major=vi.major, minor=vi.minor, micro=vi.micro
-)
-SENV_NAME = SENV_NAME_PATTERN.format(major=vi.major, minor=vi.minor, micro=vi.micro)
-del vi
 
 REQUIRED_PACKAGES = frozenset(
     ["dask", "distributed", "bokeh", "cloudpickle", "msgpack"]
@@ -55,3 +47,15 @@ if __name__ == "__main__":
     for k, v in list(locals().items()):
         if k.isupper() and isinstance(v, str):
             print(f"{k}={v}")
+
+    # Used in GitHub actions to give the correct image tag for a Python version,
+    # given as CLI argument (the Python version in GHA might not be the version
+    # we're building for)
+
+    import sys
+
+    if len(sys.argv) > 1:
+        major, minor, micro = sys.argv[1].split(".")
+
+        image = DOCKER_IMAGE_PATTERN.format(major=major, minor=minor, micro=micro)
+        print(f"DOCKER_IMAGE={image}")
