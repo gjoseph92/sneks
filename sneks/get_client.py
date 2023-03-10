@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import subprocess
 import sys
 
 import coiled
+import dask.config
 import rich
 from coiled.utils import parse_wait_for_workers
 from distributed.client import Client
@@ -29,13 +31,19 @@ def _senv(account: str | None) -> str:
     """
     vi = sys.version_info
     senv = SENV_NAME_PATTERN.format(major=vi.major, minor=vi.minor, micro=vi.micro)
-    coiled.create_software_environment(
-        name=senv,
-        container=DOCKER_IMAGE_PATTERN.format(
-            major=vi.major, minor=vi.minor, micro=vi.micro
-        ),
-        account=account,
-    )
+
+    with dask.config.set(
+        {"coiled.account": account}
+        # HACK: `create_software_environment` doesn't currently respect `account=`,
+        # but does handle dask config. Remove contextmanager when fixed.
+    ) if account is not None else contextlib.nullcontext():
+        coiled.create_software_environment(
+            name=senv,
+            container=DOCKER_IMAGE_PATTERN.format(
+                major=vi.major, minor=vi.minor, micro=vi.micro
+            ),
+            account=account,
+        )
     return senv
 
 
